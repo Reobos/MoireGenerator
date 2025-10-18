@@ -231,23 +231,54 @@ const ids = {
 
 <style scoped>
 .combined {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
   gap: 1rem;
+  align-items: stretch;
+  flex-wrap: wrap;
+  width: 100%;
 }
 .col {
+  flex: 1 1 360px; /* grow, shrink, base width */
+  min-width: 0; /* allow shrinking to container */
   background: rgba(255, 255, 255, 0.9);
   color: #222;
-  padding: 0.5rem 0.75rem;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
 }
 .row {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
+  flex-wrap: wrap; /* allow controls to wrap */
 }
-.num { width: 4.5rem; }
-select { padding: 0.2rem; }
+label { min-width: 110px; }
+.num { width: 4.75rem; flex: 0 0 auto; }
+select { padding: 0.25rem; }
+
+/* Let range/select expand but not force overflow */
+.row > input[type="range"],
+.row > select {
+  flex: 1 1 200px;
+  min-width: 140px;
+}
+
+@media (max-width: 900px) {
+  .combined { gap: 0.75rem; }
+  .col { flex: 1 1 100%; }
+}
+@media (max-width: 600px) {
+  label { min-width: 100px; }
+  .num { width: 4.25rem; }
+}
+
+/* Stack on very small screens */
+@media (max-width: 480px) {
+  .row { flex-direction: column; align-items: stretch; }
+  label { min-width: 0; }
+  .row > input,
+  .row > select { width: 100%; min-width: 0; }
+  .num { width: 100%; max-width: 8rem; }
+}
 </style>

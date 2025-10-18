@@ -221,16 +221,19 @@ function resetDefaults() {
 
 <template>
   <div class="wrapper">
-    <div class="global-control">
-      <label for="baseRefRadius">Base reference radius</label>
-      <input id="baseRefRadius" class="num" type="number" min="1" step="1" v-model.number="baseRefRadius" />
-      <label for="rotateB">Rotate B</label>
-      <input id="rotateB" type="checkbox" v-model="previewRotateB" />
-      <label for="rotateSpeed">Speed</label>
-      <input id="rotateSpeed" class="num" type="number" min="0" step="1" v-model.number="previewRotateSpeed" />
-      <button type="button" @click="resetDefaults">Reset to defaults</button>
+    <div class="card global-card">
+      <div class="global-control">
+        <label for="baseRefRadius">Base reference radius</label>
+        <input id="baseRefRadius" class="num" type="number" min="1" step="1" v-model.number="baseRefRadius" />
+        <label for="rotateB">Rotate B</label>
+        <input id="rotateB" type="checkbox" v-model="previewRotateB" />
+        <label for="rotateSpeed">Speed</label>
+        <input id="rotateSpeed" class="num" type="number" min="0" step="1" v-model.number="previewRotateSpeed" />
+        <button type="button" @click="resetDefaults">Reset to defaults</button>
+      </div>
     </div>
-    <CombinedControls
+    <div class="card controls-card">
+      <CombinedControls
       :a-pattern="aPattern" @update:aPattern="v => (aPattern = v)"
       :a-line-angle="aLineAngle" @update:aLineAngle="v => (aLineAngle = v)"
       :a-hatch-stroke="aHatchStroke" @update:aHatchStroke="v => (aHatchStroke = v)"
@@ -256,8 +259,9 @@ function resetDefaults() {
       :b-wavy-wavelength="bWavyWavelength" @update:bWavyWavelength="v => (bWavyWavelength = v)"
       :b-wavy-spacing="bWavySpacing" @update:bWavySpacing="v => (bWavySpacing = v)"
       :b-wavy-stroke="bWavyStroke" @update:bWavyStroke="v => (bWavyStroke = v)"
-    />
-      <div class="stage">
+      />
+    </div>
+      <div class="card stage">
         <div class="row">
           <SvgCircle ref="aRef" :size="size" :r="size/2 - 0.5 - 2"
             :use-hatch="aPattern === 'hatch'" :use-concentric="aPattern === 'concentric'" :use-wavy="aPattern === 'wavy'"
@@ -340,7 +344,7 @@ function resetDefaults() {
 
 .row {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 1rem;
   width: 100%;
   max-width: 95vw;
@@ -379,5 +383,35 @@ function resetDefaults() {
   padding: 0.5rem 0.75rem;
   border-radius: 8px;
   box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+}
+
+/* Cards */
+.card {
+  background: rgba(255, 255, 255, 0.9);
+  color: #222;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+  width: 100%;
+  max-width: 1200px;
+}
+.global-card { display: block; }
+
+.export-row {
+  margin-top: 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+/* Responsive adjustments */
+@media (max-width: 900px) {
+  .row {
+    grid-template-columns: 1fr;
+  }
+}
+@media (max-width: 600px) {
+  .global-control { flex-wrap: wrap; }
+  .global-control label { min-width: 120px; text-align: left; }
 }
 </style>
