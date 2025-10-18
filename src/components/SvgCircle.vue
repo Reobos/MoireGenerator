@@ -27,6 +27,13 @@ const props = defineProps({
   concentricStrokeWidth: { type: Number, default: 1 },
   concentricOffsetX: { type: Number, default: 0 },
   concentricOffsetY: { type: Number, default: 0 },
+  // wavy pattern options
+  useWavy: { type: Boolean, default: false },
+  wavyAmplitude: { type: Number, default: 6 },
+  wavyWavelength: { type: Number, default: 24 },
+  wavySpacing: { type: Number, default: 12 },
+  wavyStrokeWidth: { type: Number, default: 1 },
+  wavyColor: { type: String, default: '#000' },
   // base reference radius for scaling pattern sizes
   baseRefRadius: { type: Number, default: 150 },
   // ARIA label for accessibility
@@ -39,6 +46,7 @@ const titleId = `svgCircleTitle-${uid}`
 const frameClipId = `svgCircleFrame-${uid}`
 const hatchPatternId = `circleHatch-${uid}`
 const concentricPatternId = `circleConcentric-${uid}`
+const wavyPatternId = `circleWavy-${uid}`
 
 const viewBox = computed(() => `0 0 ${props.size} ${props.size}`)
 const centerX = computed(() => (props.cx == null ? props.size / 2 : props.cx))
@@ -78,6 +86,26 @@ const ringsCount = computed(() => {
   const requiredR = offsetDistance.value + clampedR.value
   return Math.max(0, Math.floor(requiredR / scaledConcentricSpacing.value))
 })
+
+// Scaled wavy values
+const scaledWavyAmplitude = computed(() => props.wavyAmplitude * scale.value)
+const scaledWavyWavelength = computed(() => Math.max(1, props.wavyWavelength * scale.value))
+const scaledWavySpacing = computed(() => Math.max(1, props.wavySpacing * scale.value))
+const scaledWavyStrokeWidth = computed(() => props.wavyStrokeWidth * scale.value)
+
+function makeWavePath(width, amplitude, samples, baselineY) {
+  // adaptive sampling: ~2 samples per pixel of wavelength, clamped
+  const n = Math.max(32, Math.min(1024, samples || Math.round(width * 2)))
+  const w = Math.max(1, width)
+  const A = amplitude
+  let d = ''
+  for (let i = 0; i < n; i++) {
+    const x = (i / (n - 1)) * w
+    const y = baselineY + (A ? Math.sin((2 * Math.PI * x) / w) * A : 0)
+    d += (i === 0 ? `M ${x} ${y}` : ` L ${x} ${y}`)
+  }
+  return d
+}
 
 // Expose SVG for export
 const svgEl = ref(null)
@@ -134,6 +162,28 @@ defineExpose({ getSvgString, svgEl })
           </template>
         </g>
       </pattern>
+
+      <pattern
+        :id="wavyPatternId"
+        patternUnits="userSpaceOnUse"
+        :width="scaledWavyWavelength"
+        :height="Math.max(scaledWavySpacing, 2 * scaledWavyAmplitude + scaledWavyStrokeWidth)"
+      >
+        <!-- transparent background for overlay -->
+        <path
+          :d="makeWavePath(
+            scaledWavyWavelength,
+            scaledWavyAmplitude,
+            60,
+            Math.max(scaledWavySpacing, 2 * scaledWavyAmplitude + scaledWavyStrokeWidth) / 2
+          )"
+          fill="none"
+          :stroke="wavyColor"
+          :stroke-width="scaledWavyStrokeWidth"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        />
+      </pattern>
     </defs>
 
     <g :clip-path="`url(#${frameClipId})`">
@@ -144,7 +194,7 @@ defineExpose({ getSvgString, svgEl })
         :r="clampedR"
         :stroke="stroke"
         stroke-width="1"
-        :fill="useConcentric ? concentricUrl : (useHatch ? hatchUrl : fill)"
+        :fill="useWavy ? `url(#${wavyPatternId})` : (useConcentric ? concentricUrl : (useHatch ? hatchUrl : fill))"
       />
     </g>
   </svg>

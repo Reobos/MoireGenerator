@@ -5,7 +5,7 @@ import CombinedControls from './components/CombinedControls.vue'
 import PreviewCircle from './components/PreviewCircle.vue'
 
 // Circle A (left)
-const aPattern = ref('hatch')
+const aPattern = ref('hatch') // 'hatch' | 'concentric' | 'wavy'
 const aLineAngle = ref(0)
 const aHatchStroke = ref(1)
 const aHatchSpacing = ref(8)
@@ -13,9 +13,13 @@ const aConcStroke = ref(1)
 const aConcSpacing = ref(12)
 const aConcOffsetX = ref(0)
 const aConcOffsetY = ref(0)
+const aWavyAmplitude = ref(6)
+const aWavyWavelength = ref(24)
+const aWavySpacing = ref(12)
+const aWavyStroke = ref(1)
 
 // Circle B (right)
-const bPattern = ref('concentric')
+const bPattern = ref('concentric') // 'hatch' | 'concentric' | 'wavy'
 const bLineAngle = ref(0)
 const bHatchStroke = ref(1)
 const bHatchSpacing = ref(8)
@@ -23,6 +27,10 @@ const bConcStroke = ref(1)
 const bConcSpacing = ref(12)
 const bConcOffsetX = ref(0)
 const bConcOffsetY = ref(0)
+const bWavyAmplitude = ref(6)
+const bWavyWavelength = ref(24)
+const bWavySpacing = ref(12)
+const bWavyStroke = ref(1)
 const size = ref(300)
 const aRef = ref(null)
 const bRef = ref(null)
@@ -46,6 +54,10 @@ function applyCircleSettings(which, src) {
     setNum(aConcSpacing, src.concSpacing)
     setNum(aConcOffsetX, src.concOffsetX)
     setNum(aConcOffsetY, src.concOffsetY)
+    setNum(aWavyAmplitude, src.aWavyAmplitude)
+    setNum(aWavyWavelength, src.aWavyWavelength)
+    setNum(aWavySpacing, src.aWavySpacing)
+    setNum(aWavyStroke, src.aWavyStroke)
   } else if (which === 'b') {
     setPattern(bPattern, src.pattern)
     setNum(bLineAngle, src.lineAngle)
@@ -55,6 +67,10 @@ function applyCircleSettings(which, src) {
     setNum(bConcSpacing, src.concSpacing)
     setNum(bConcOffsetX, src.concOffsetX)
     setNum(bConcOffsetY, src.concOffsetY)
+    setNum(bWavyAmplitude, src.bWavyAmplitude)
+    setNum(bWavyWavelength, src.bWavyWavelength)
+    setNum(bWavySpacing, src.bWavySpacing)
+    setNum(bWavyStroke, src.bWavyStroke)
   }
 }
 
@@ -82,6 +98,10 @@ function saveSettings() {
       concSpacing: aConcSpacing.value,
       concOffsetX: aConcOffsetX.value,
       concOffsetY: aConcOffsetY.value,
+      aWavyAmplitude: aWavyAmplitude.value,
+      aWavyWavelength: aWavyWavelength.value,
+      aWavySpacing: aWavySpacing.value,
+      aWavyStroke: aWavyStroke.value,
     },
     b: {
       pattern: bPattern.value,
@@ -92,6 +112,10 @@ function saveSettings() {
       concSpacing: bConcSpacing.value,
       concOffsetX: bConcOffsetX.value,
       concOffsetY: bConcOffsetY.value,
+      bWavyAmplitude: bWavyAmplitude.value,
+      bWavyWavelength: bWavyWavelength.value,
+      bWavySpacing: bWavySpacing.value,
+      bWavyStroke: bWavyStroke.value,
     },
     baseRefRadius: baseRefRadius.value,
   }
@@ -145,7 +169,9 @@ onBeforeUnmount(() => {
 // Save whenever any relevant control changes
 watch([
   aPattern, aLineAngle, aHatchStroke, aHatchSpacing, aConcStroke, aConcSpacing, aConcOffsetX, aConcOffsetY,
+  aWavyAmplitude, aWavyWavelength, aWavySpacing, aWavyStroke,
   bPattern, bLineAngle, bHatchStroke, bHatchSpacing, bConcStroke, bConcSpacing, bConcOffsetX, bConcOffsetY,
+  bWavyAmplitude, bWavyWavelength, bWavySpacing, bWavyStroke,
   baseRefRadius,
 ], saveSettings, { deep: false })
 </script>
@@ -165,6 +191,10 @@ watch([
       :a-conc-spacing="aConcSpacing" @update:aConcSpacing="v => (aConcSpacing = v)"
       :a-conc-offset-x="aConcOffsetX" @update:aConcOffsetX="v => (aConcOffsetX = v)"
       :a-conc-offset-y="aConcOffsetY" @update:aConcOffsetY="v => (aConcOffsetY = v)"
+      :a-wavy-amplitude="aWavyAmplitude" @update:aWavyAmplitude="v => (aWavyAmplitude = v)"
+      :a-wavy-wavelength="aWavyWavelength" @update:aWavyWavelength="v => (aWavyWavelength = v)"
+      :a-wavy-spacing="aWavySpacing" @update:aWavySpacing="v => (aWavySpacing = v)"
+      :a-wavy-stroke="aWavyStroke" @update:aWavyStroke="v => (aWavyStroke = v)"
 
       :b-pattern="bPattern" @update:bPattern="v => (bPattern = v)"
       :b-line-angle="bLineAngle" @update:bLineAngle="v => (bLineAngle = v)"
@@ -174,20 +204,26 @@ watch([
       :b-conc-spacing="bConcSpacing" @update:bConcSpacing="v => (bConcSpacing = v)"
       :b-conc-offset-x="bConcOffsetX" @update:bConcOffsetX="v => (bConcOffsetX = v)"
       :b-conc-offset-y="bConcOffsetY" @update:bConcOffsetY="v => (bConcOffsetY = v)"
+      :b-wavy-amplitude="bWavyAmplitude" @update:bWavyAmplitude="v => (bWavyAmplitude = v)"
+      :b-wavy-wavelength="bWavyWavelength" @update:bWavyWavelength="v => (bWavyWavelength = v)"
+      :b-wavy-spacing="bWavySpacing" @update:bWavySpacing="v => (bWavySpacing = v)"
+      :b-wavy-stroke="bWavyStroke" @update:bWavyStroke="v => (bWavyStroke = v)"
     />
       <div class="stage">
         <div class="row">
           <SvgCircle ref="aRef" :size="size" :r="size/2 - 0.5 - 2"
-            :use-hatch="aPattern === 'hatch'" :use-concentric="aPattern === 'concentric'"
+            :use-hatch="aPattern === 'hatch'" :use-concentric="aPattern === 'concentric'" :use-wavy="aPattern === 'wavy'"
             :line-angle="aLineAngle" :line-stroke-width="aHatchStroke" :line-spacing="aHatchSpacing"
             :concentric-stroke-width="aConcStroke" :concentric-spacing="aConcSpacing"
             :concentric-offset-x="aConcOffsetX" :concentric-offset-y="aConcOffsetY" :base-ref-radius="baseRefRadius"
+            :wavy-amplitude="aWavyAmplitude" :wavy-wavelength="aWavyWavelength" :wavy-spacing="aWavySpacing" :wavy-stroke-width="aWavyStroke"
             aria-label="Circle A" />
           <SvgCircle ref="bRef" :size="size" :r="size/2 - 0.5 - 2"
-            :use-hatch="bPattern === 'hatch'" :use-concentric="bPattern === 'concentric'"
+            :use-hatch="bPattern === 'hatch'" :use-concentric="bPattern === 'concentric'" :use-wavy="bPattern === 'wavy'"
             :line-angle="bLineAngle" :line-stroke-width="bHatchStroke" :line-spacing="bHatchSpacing"
             :concentric-stroke-width="bConcStroke" :concentric-spacing="bConcSpacing"
             :concentric-offset-x="bConcOffsetX" :concentric-offset-y="bConcOffsetY" :base-ref-radius="baseRefRadius"
+            :wavy-amplitude="bWavyAmplitude" :wavy-wavelength="bWavyWavelength" :wavy-spacing="bWavySpacing" :wavy-stroke-width="bWavyStroke"
             aria-label="Circle B" />
         </div>
         <div class="preview">
@@ -203,6 +239,10 @@ watch([
             :a-conc-spacing="aConcSpacing"
             :a-conc-offset-x="aConcOffsetX"
             :a-conc-offset-y="aConcOffsetY"
+            :a-wavy-amplitude="aWavyAmplitude"
+            :a-wavy-wavelength="aWavyWavelength"
+            :a-wavy-spacing="aWavySpacing"
+            :a-wavy-stroke="aWavyStroke"
 
             :b-pattern="bPattern"
             :b-line-angle="bLineAngle"
@@ -212,6 +252,10 @@ watch([
             :b-conc-spacing="bConcSpacing"
             :b-conc-offset-x="bConcOffsetX"
             :b-conc-offset-y="bConcOffsetY"
+            :b-wavy-amplitude="bWavyAmplitude"
+            :b-wavy-wavelength="bWavyWavelength"
+            :b-wavy-spacing="bWavySpacing"
+            :b-wavy-stroke="bWavyStroke"
             aria-label="Preview Overlay"
           />
         </div>
