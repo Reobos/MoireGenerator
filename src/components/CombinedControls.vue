@@ -2,13 +2,13 @@
 const props = defineProps({
   // Circle A
   aPattern: { type: String, default: 'hatch' }, // 'hatch' | 'concentric'
-  aLineAngle: { type: Number, default: 0 },
-  aHatchStroke: { type: Number, default: 1 },
-  aHatchSpacing: { type: Number, default: 8 },
-  aConcStroke: { type: Number, default: 1 },
-  aConcSpacing: { type: Number, default: 12 },
-  aConcOffsetX: { type: Number, default: 0 },
-  aConcOffsetY: { type: Number, default: 0 },
+  aLineAngle: { type: Number, default: 70 },
+  aHatchStroke: { type: Number, default: 6 },
+  aHatchSpacing: { type: Number, default: 6 },
+  aConcStroke: { type: Number, default: 4 },
+  aConcSpacing: { type: Number, default: 9 },
+  aConcOffsetX: { type: Number, default: 25 },
+  aConcOffsetY: { type: Number, default: 25 },
   aWavyAmplitude: { type: Number, default: 6 },
   aWavyWavelength: { type: Number, default: 24 },
   aWavySpacing: { type: Number, default: 12 },

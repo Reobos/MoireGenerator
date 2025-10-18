@@ -6,11 +6,11 @@ import PreviewCircle from './components/PreviewCircle.vue'
 
 // Circle A (left)
 const aPattern = ref('hatch') // 'hatch' | 'concentric' | 'wavy'
-const aLineAngle = ref(0)
-const aHatchStroke = ref(1)
-const aHatchSpacing = ref(8)
-const aConcStroke = ref(1)
-const aConcSpacing = ref(12)
+const aLineAngle = ref(70)
+const aHatchStroke = ref(6)
+const aHatchSpacing = ref(6)
+const aConcStroke = ref(4)
+const aConcSpacing = ref(9)
 const aConcOffsetX = ref(0)
 const aConcOffsetY = ref(0)
 const aWavyAmplitude = ref(6)
@@ -21,12 +21,12 @@ const aWavyStroke = ref(1)
 // Circle B (right)
 const bPattern = ref('concentric') // 'hatch' | 'concentric' | 'wavy'
 const bLineAngle = ref(0)
-const bHatchStroke = ref(1)
-const bHatchSpacing = ref(8)
-const bConcStroke = ref(1)
-const bConcSpacing = ref(12)
-const bConcOffsetX = ref(0)
-const bConcOffsetY = ref(0)
+const bHatchStroke = ref(6)
+const bHatchSpacing = ref(6)
+const bConcStroke = ref(4)
+const bConcSpacing = ref(9)
+const bConcOffsetX = ref(25)
+const bConcOffsetY = ref(30)
 const bWavyAmplitude = ref(6)
 const bWavyWavelength = ref(24)
 const bWavySpacing = ref(12)
@@ -35,13 +35,16 @@ const size = ref(300)
 const aRef = ref(null)
 const bRef = ref(null)
 // Base reference radius for pattern scaling
-const baseRefRadius = ref(150)
+const baseRefRadius = ref(200)
+// Preview animation controls
+const previewRotateB = ref(true)
+const previewRotateSpeed = ref(20)
 
 // Persist settings per circle/pattern
 const SETTINGS_KEY = 'moireSettingsV1'
 
 function setNum(refVar, val) { if (typeof val === 'number') refVar.value = val }
-function setPattern(refVar, val) { if (val === 'hatch' || val === 'concentric') refVar.value = val }
+function setPattern(refVar, val) { if (val === 'hatch' || val === 'concentric' || val === 'wavy') refVar.value = val }
 
 function applyCircleSettings(which, src) {
   if (!src) return
@@ -174,6 +177,46 @@ watch([
   bWavyAmplitude, bWavyWavelength, bWavySpacing, bWavyStroke,
   baseRefRadius,
 ], saveSettings, { deep: false })
+
+function resetDefaults() {
+  // Circle A defaults
+  aPattern.value = 'hatch'
+  aLineAngle.value = 70
+  aHatchStroke.value = 6
+  aHatchSpacing.value = 6
+  aConcStroke.value = 4
+  aConcSpacing.value = 9
+  aConcOffsetX.value = 0
+  aConcOffsetY.value = 0
+  aWavyAmplitude.value = 6
+  aWavyWavelength.value = 24
+  aWavySpacing.value = 12
+  aWavyStroke.value = 1
+
+  // Circle B defaults
+  bPattern.value = 'concentric'
+  bLineAngle.value = 0
+  bHatchStroke.value = 6
+  bHatchSpacing.value = 6
+  bConcStroke.value = 4
+  bConcSpacing.value = 9
+  bConcOffsetX.value = 25
+  bConcOffsetY.value = 30
+  bWavyAmplitude.value = 6
+  bWavyWavelength.value = 24
+  bWavySpacing.value = 12
+  bWavyStroke.value = 1
+
+  // Global defaults
+  baseRefRadius.value = 200
+  // Keep current size based on viewport; do not reset.
+  // Animation defaults
+  previewRotateB.value = true
+  previewRotateSpeed.value = 20
+
+  // Persist the defaults
+  saveSettings()
+}
 </script>
 
 <template>
@@ -181,6 +224,11 @@ watch([
     <div class="global-control">
       <label for="baseRefRadius">Base reference radius</label>
       <input id="baseRefRadius" class="num" type="number" min="1" step="1" v-model.number="baseRefRadius" />
+      <label for="rotateB">Rotate B</label>
+      <input id="rotateB" type="checkbox" v-model="previewRotateB" />
+      <label for="rotateSpeed">Speed</label>
+      <input id="rotateSpeed" class="num" type="number" min="0" step="1" v-model.number="previewRotateSpeed" />
+      <button type="button" @click="resetDefaults">Reset to defaults</button>
     </div>
     <CombinedControls
       :a-pattern="aPattern" @update:aPattern="v => (aPattern = v)"
@@ -231,6 +279,8 @@ watch([
             :size="size"
             :r="size/2 - 0.5 - 2"
             :base-ref-radius="baseRefRadius"
+            :rotate-b-enabled="previewRotateB"
+            :rotate-b-speed="previewRotateSpeed"
             :a-pattern="aPattern"
             :a-line-angle="aLineAngle"
             :a-hatch-stroke="aHatchStroke"

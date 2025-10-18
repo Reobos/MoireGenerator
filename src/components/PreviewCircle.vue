@@ -1,5 +1,5 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, ref, onMounted, onBeforeUnmount, watch } from 'vue'
 
 const props = defineProps({
   size: { type: Number, default: 200 },
@@ -10,6 +10,9 @@ const props = defineProps({
   background: { type: String, default: 'white' },
   ariaLabel: { type: String, default: 'Preview circle' },
   baseRefRadius: { type: Number, default: 150 },
+  // animation to rotate circle B pattern
+  rotateBEnabled: { type: Boolean, default: true },
+  rotateBSpeed: { type: Number, default: 20 }, // degrees per second
 
   // Circle A pattern selection + settings
   aPattern: { type: String, default: 'hatch' }, // 'hatch' | 'concentric'
@@ -119,6 +122,42 @@ const bRings = computed(() => {
   const requiredR = bOffset.value + clampedR.value
   return Math.max(0, Math.floor(requiredR / bScaledConcSpacing.value))
 })
+
+// Animated rotation state for B
+const bAngle = ref(0)
+let rafId = 0
+let lastTs = 0
+function loop(ts) {
+  if (!lastTs) lastTs = ts
+  const dt = (ts - lastTs) / 1000
+  lastTs = ts
+  bAngle.value = (bAngle.value + dt * (props.rotateBSpeed || 0)) % 360
+  rafId = requestAnimationFrame(loop)
+}
+function startAnim() {
+  if (rafId) cancelAnimationFrame(rafId)
+  lastTs = 0
+  rafId = requestAnimationFrame(loop)
+}
+function stopAnim() {
+  if (rafId) cancelAnimationFrame(rafId)
+  rafId = 0
+}
+onMounted(() => {
+  if (props.rotateBEnabled) startAnim()
+})
+onBeforeUnmount(() => {
+  stopAnim()
+})
+watch(() => props.rotateBEnabled, (en) => {
+  if (en) startAnim(); else stopAnim()
+})
+
+// B pattern rotation transforms around the circle center
+const bHatchAngle = computed(() => (props.bLineAngle || 0) + bAngle.value)
+const bHatchTransform = computed(() => `rotate(${bHatchAngle.value}, ${centerX.value}, ${centerY.value})`)
+const bConcentricTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
+const bWavyTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
 </script>
 
 <template>
@@ -155,12 +194,12 @@ const bRings = computed(() => {
       </pattern>
 
       <!-- B hatch pattern (transparent) -->
-      <pattern :id="bHatchId" patternUnits="userSpaceOnUse" :width="bScaledHatchSpacing" :height="bScaledHatchSpacing" :patternTransform="`rotate(${bLineAngle})`">
+      <pattern :id="bHatchId" patternUnits="userSpaceOnUse" :width="bScaledHatchSpacing" :height="bScaledHatchSpacing" :patternTransform="bHatchTransform">
         <line x1="0" y1="0" :x2="bScaledHatchSpacing" y2="0" :stroke="'#000'" :stroke-width="bScaledHatchStroke" />
       </pattern>
 
       <!-- B concentric pattern (transparent) -->
-      <pattern :id="bConcentricId" patternUnits="userSpaceOnUse" :width="size * 2" :height="size * 2">
+      <pattern :id="bConcentricId" patternUnits="userSpaceOnUse" :width="size * 2" :height="size * 2" :patternTransform="bConcentricTransform">
         <g :transform="`translate(${centerX + bScaledOffsetX}, ${centerY + bScaledOffsetY})`">
           <template v-for="i in bRings" :key="i">
             <circle :cx="0" :cy="0" :r="i * bScaledConcSpacing" fill="none" stroke="#000" :stroke-width="bScaledConcStroke" />
@@ -169,7 +208,7 @@ const bRings = computed(() => {
       </pattern>
 
       <!-- B wavy pattern (transparent) -->
-      <pattern :id="bWavyId" patternUnits="userSpaceOnUse" :width="bScaledWavyWavelength" :height="Math.max(bScaledWavySpacing, 2 * bScaledWavyAmplitude + bScaledWavyStroke)">
+      <pattern :id="bWavyId" patternUnits="userSpaceOnUse" :width="bScaledWavyWavelength" :height="Math.max(bScaledWavySpacing, 2 * bScaledWavyAmplitude + bScaledWavyStroke)" :patternTransform="bWavyTransform">
         <path :d="makeWavePath(bScaledWavyWavelength, bScaledWavyAmplitude, 60, Math.max(bScaledWavySpacing, 2 * bScaledWavyAmplitude + bScaledWavyStroke) / 2)" fill="none" stroke="#000" :stroke-width="bScaledWavyStroke" stroke-linecap="round" stroke-linejoin="round" />
       </pattern>
     </defs>
