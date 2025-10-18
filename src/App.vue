@@ -2,6 +2,7 @@
 import { ref, onMounted, onBeforeUnmount, watch } from 'vue'
 import SvgCircle from './components/SvgCircle.vue'
 import CombinedControls from './components/CombinedControls.vue'
+import PreviewCircle from './components/PreviewCircle.vue'
 
 // Circle A (left)
 const aPattern = ref('hatch')
@@ -180,6 +181,30 @@ watch([
             :concentric-offset-x="bConcOffsetX" :concentric-offset-y="bConcOffsetY"
             aria-label="Circle B" />
         </div>
+        <div class="preview">
+          <PreviewCircle
+            :size="size"
+            :r="size/2 - 0.5 - 2"
+            :a-pattern="aPattern"
+            :a-line-angle="aLineAngle"
+            :a-hatch-stroke="aHatchStroke"
+            :a-hatch-spacing="aHatchSpacing"
+            :a-conc-stroke="aConcStroke"
+            :a-conc-spacing="aConcSpacing"
+            :a-conc-offset-x="aConcOffsetX"
+            :a-conc-offset-y="aConcOffsetY"
+
+            :b-pattern="bPattern"
+            :b-line-angle="bLineAngle"
+            :b-hatch-stroke="bHatchStroke"
+            :b-hatch-spacing="bHatchSpacing"
+            :b-conc-stroke="bConcStroke"
+            :b-conc-spacing="bConcSpacing"
+            :b-conc-offset-x="bConcOffsetX"
+            :b-conc-offset-y="bConcOffsetY"
+            aria-label="Preview Overlay"
+          />
+        </div>
       <div class="export-row">
         <button @click="exportACircle">Export SVG (A)</button>
         <button @click="exportBCircle">Export SVG (B)</button>
@@ -215,6 +240,12 @@ watch([
   gap: 1rem;
   width: 100%;
   max-width: 95vw;
+}
+
+.preview {
+  margin-top: 1rem;
+  display: grid;
+  place-items: center;
 }
 
 .controls {
