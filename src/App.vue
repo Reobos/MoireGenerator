@@ -26,6 +26,8 @@ const bConcOffsetY = ref(0)
 const size = ref(300)
 const aRef = ref(null)
 const bRef = ref(null)
+// Base reference radius for pattern scaling
+const baseRefRadius = ref(150)
 
 // Persist settings per circle/pattern
 const SETTINGS_KEY = 'moireSettingsV1'
@@ -63,6 +65,7 @@ function loadSettings() {
     const s = JSON.parse(raw)
     applyCircleSettings('a', s?.a)
     applyCircleSettings('b', s?.b)
+    if (typeof s?.baseRefRadius === 'number' && s.baseRefRadius > 0) baseRefRadius.value = s.baseRefRadius
   } catch (e) {
     console.warn('Failed to parse settings:', e)
   }
@@ -90,6 +93,7 @@ function saveSettings() {
       concOffsetX: bConcOffsetX.value,
       concOffsetY: bConcOffsetY.value,
     },
+    baseRefRadius: baseRefRadius.value,
   }
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s))
@@ -142,11 +146,16 @@ onBeforeUnmount(() => {
 watch([
   aPattern, aLineAngle, aHatchStroke, aHatchSpacing, aConcStroke, aConcSpacing, aConcOffsetX, aConcOffsetY,
   bPattern, bLineAngle, bHatchStroke, bHatchSpacing, bConcStroke, bConcSpacing, bConcOffsetX, bConcOffsetY,
+  baseRefRadius,
 ], saveSettings, { deep: false })
 </script>
 
 <template>
   <div class="wrapper">
+    <div class="global-control">
+      <label for="baseRefRadius">Base reference radius</label>
+      <input id="baseRefRadius" class="num" type="number" min="1" step="1" v-model.number="baseRefRadius" />
+    </div>
     <CombinedControls
       :a-pattern="aPattern" @update:aPattern="v => (aPattern = v)"
       :a-line-angle="aLineAngle" @update:aLineAngle="v => (aLineAngle = v)"
@@ -172,19 +181,20 @@ watch([
             :use-hatch="aPattern === 'hatch'" :use-concentric="aPattern === 'concentric'"
             :line-angle="aLineAngle" :line-stroke-width="aHatchStroke" :line-spacing="aHatchSpacing"
             :concentric-stroke-width="aConcStroke" :concentric-spacing="aConcSpacing"
-            :concentric-offset-x="aConcOffsetX" :concentric-offset-y="aConcOffsetY"
+            :concentric-offset-x="aConcOffsetX" :concentric-offset-y="aConcOffsetY" :base-ref-radius="baseRefRadius"
             aria-label="Circle A" />
           <SvgCircle ref="bRef" :size="size" :r="size/2 - 0.5 - 2"
             :use-hatch="bPattern === 'hatch'" :use-concentric="bPattern === 'concentric'"
             :line-angle="bLineAngle" :line-stroke-width="bHatchStroke" :line-spacing="bHatchSpacing"
             :concentric-stroke-width="bConcStroke" :concentric-spacing="bConcSpacing"
-            :concentric-offset-x="bConcOffsetX" :concentric-offset-y="bConcOffsetY"
+            :concentric-offset-x="bConcOffsetX" :concentric-offset-y="bConcOffsetY" :base-ref-radius="baseRefRadius"
             aria-label="Circle B" />
         </div>
         <div class="preview">
           <PreviewCircle
             :size="size"
             :r="size/2 - 0.5 - 2"
+            :base-ref-radius="baseRefRadius"
             :a-pattern="aPattern"
             :a-line-angle="aLineAngle"
             :a-hatch-stroke="aHatchStroke"
@@ -247,6 +257,14 @@ watch([
   display: grid;
   place-items: center;
 }
+
+.global-control {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+ .global-control .num { width: 6rem; }
 
 .controls {
   display: flex;

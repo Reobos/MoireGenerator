@@ -27,6 +27,8 @@ const props = defineProps({
   concentricStrokeWidth: { type: Number, default: 1 },
   concentricOffsetX: { type: Number, default: 0 },
   concentricOffsetY: { type: Number, default: 0 },
+  // base reference radius for scaling pattern sizes
+  baseRefRadius: { type: Number, default: 150 },
   // ARIA label for accessibility
   ariaLabel: { type: String, default: 'Generated circle' }
 })
@@ -52,12 +54,29 @@ const clampedR = computed(() => {
 
 const hatchUrl = computed(() => `url(#${hatchPatternId})`)
 const concentricUrl = computed(() => `url(#${concentricPatternId})`)
-const offsetDistance = computed(() => Math.hypot(props.concentricOffsetX, props.concentricOffsetY))
+
+// Keep pattern scale relative to circle radius using a base reference radius (configurable)
+const scale = computed(() => {
+  const base = props.baseRefRadius > 0 ? props.baseRefRadius : 150
+  return clampedR.value / base
+})
+
+// Scaled hatch values
+const scaledLineSpacing = computed(() => props.lineSpacing * scale.value)
+const scaledLineStrokeWidth = computed(() => props.lineStrokeWidth * scale.value)
+
+// Scaled concentric values
+const scaledConcentricSpacing = computed(() => props.concentricSpacing * scale.value)
+const scaledConcentricStrokeWidth = computed(() => props.concentricStrokeWidth * scale.value)
+const scaledConcentricOffsetX = computed(() => props.concentricOffsetX * scale.value)
+const scaledConcentricOffsetY = computed(() => props.concentricOffsetY * scale.value)
+
+const offsetDistance = computed(() => Math.hypot(scaledConcentricOffsetX.value, scaledConcentricOffsetY.value))
 const ringsCount = computed(() => {
-  if (props.concentricSpacing <= 0) return 0
+  if (scaledConcentricSpacing.value <= 0) return 0
   // cover entire circle even when the ring center is offset: need up to (offset + radius)
   const requiredR = offsetDistance.value + clampedR.value
-  return Math.max(0, Math.floor(requiredR / props.concentricSpacing))
+  return Math.max(0, Math.floor(requiredR / scaledConcentricSpacing.value))
 })
 
 // Expose SVG for export
@@ -92,14 +111,14 @@ defineExpose({ getSvgString, svgEl })
       <pattern
         :id="hatchPatternId"
         patternUnits="userSpaceOnUse"
-        :width="lineSpacing"
-        :height="lineSpacing"
+        :width="scaledLineSpacing"
+        :height="scaledLineSpacing"
         :patternTransform="`rotate(${lineAngle})`"
       >
         <!-- white background for the hatch pattern -->
-        <rect :width="lineSpacing" :height="lineSpacing" fill="white" />
+        <rect :width="scaledLineSpacing" :height="scaledLineSpacing" fill="white" />
   <!-- a single line; pattern repeats to make parallel lines -->
-  <line x1="0" y1="0" :x2="lineSpacing" y2="0" :stroke="lineColor" :stroke-width="lineStrokeWidth" />
+  <line x1="0" y1="0" :x2="scaledLineSpacing" y2="0" :stroke="lineColor" :stroke-width="scaledLineStrokeWidth" />
       </pattern>
 
       <pattern
@@ -109,9 +128,9 @@ defineExpose({ getSvgString, svgEl })
         :height="size * 2"
       >
         <rect :width="size * 2" :height="size * 2" fill="white" />
-        <g :transform="`translate(${centerX + concentricOffsetX}, ${centerY + concentricOffsetY})`">
+        <g :transform="`translate(${centerX + scaledConcentricOffsetX}, ${centerY + scaledConcentricOffsetY})`">
           <template v-for="i in ringsCount" :key="i">
-            <circle :cx="0" :cy="0" :r="i * concentricSpacing" :fill="'none'" :stroke="concentricColor" :stroke-width="concentricStrokeWidth" />
+            <circle :cx="0" :cy="0" :r="i * scaledConcentricSpacing" :fill="'none'" :stroke="concentricColor" :stroke-width="scaledConcentricStrokeWidth" />
           </template>
         </g>
       </pattern>

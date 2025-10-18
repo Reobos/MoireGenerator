@@ -9,6 +9,7 @@ const props = defineProps({
   stroke: { type: String, default: '#000' },
   background: { type: String, default: 'white' },
   ariaLabel: { type: String, default: 'Preview circle' },
+  baseRefRadius: { type: Number, default: 150 },
 
   // Circle A pattern selection + settings
   aPattern: { type: String, default: 'hatch' }, // 'hatch' | 'concentric'
@@ -52,18 +53,38 @@ const clampedR = computed(() => {
   return Math.max(0, Math.min(props.r, maxR))
 })
 
-const aOffset = computed(() => Math.hypot(props.aConcOffsetX, props.aConcOffsetY))
-const aRings = computed(() => {
-  if (props.aConcSpacing <= 0) return 0
-  const requiredR = aOffset.value + clampedR.value
-  return Math.max(0, Math.floor(requiredR / props.aConcSpacing))
+// Keep pattern scale relative to circle radius using a base reference radius (configurable)
+const scale = computed(() => {
+  const base = props.baseRefRadius > 0 ? props.baseRefRadius : 150
+  return clampedR.value / base
 })
 
-const bOffset = computed(() => Math.hypot(props.bConcOffsetX, props.bConcOffsetY))
+// Scaled A values
+const aScaledHatchSpacing = computed(() => props.aHatchSpacing * scale.value)
+const aScaledHatchStroke = computed(() => props.aHatchStroke * scale.value)
+const aScaledConcSpacing = computed(() => props.aConcSpacing * scale.value)
+const aScaledConcStroke = computed(() => props.aConcStroke * scale.value)
+const aScaledOffsetX = computed(() => props.aConcOffsetX * scale.value)
+const aScaledOffsetY = computed(() => props.aConcOffsetY * scale.value)
+const aOffset = computed(() => Math.hypot(aScaledOffsetX.value, aScaledOffsetY.value))
+const aRings = computed(() => {
+  if (aScaledConcSpacing.value <= 0) return 0
+  const requiredR = aOffset.value + clampedR.value
+  return Math.max(0, Math.floor(requiredR / aScaledConcSpacing.value))
+})
+
+// Scaled B values
+const bScaledHatchSpacing = computed(() => props.bHatchSpacing * scale.value)
+const bScaledHatchStroke = computed(() => props.bHatchStroke * scale.value)
+const bScaledConcSpacing = computed(() => props.bConcSpacing * scale.value)
+const bScaledConcStroke = computed(() => props.bConcStroke * scale.value)
+const bScaledOffsetX = computed(() => props.bConcOffsetX * scale.value)
+const bScaledOffsetY = computed(() => props.bConcOffsetY * scale.value)
+const bOffset = computed(() => Math.hypot(bScaledOffsetX.value, bScaledOffsetY.value))
 const bRings = computed(() => {
-  if (props.bConcSpacing <= 0) return 0
+  if (bScaledConcSpacing.value <= 0) return 0
   const requiredR = bOffset.value + clampedR.value
-  return Math.max(0, Math.floor(requiredR / props.bConcSpacing))
+  return Math.max(0, Math.floor(requiredR / bScaledConcSpacing.value))
 })
 </script>
 
@@ -82,29 +103,29 @@ const bRings = computed(() => {
       </clipPath>
 
       <!-- A hatch pattern (transparent background for overlay) -->
-      <pattern :id="aHatchId" patternUnits="userSpaceOnUse" :width="aHatchSpacing" :height="aHatchSpacing" :patternTransform="`rotate(${aLineAngle})`">
-        <line x1="0" y1="0" :x2="aHatchSpacing" y2="0" :stroke="'#000'" :stroke-width="aHatchStroke" />
+      <pattern :id="aHatchId" patternUnits="userSpaceOnUse" :width="aScaledHatchSpacing" :height="aScaledHatchSpacing" :patternTransform="`rotate(${aLineAngle})`">
+        <line x1="0" y1="0" :x2="aScaledHatchSpacing" y2="0" :stroke="'#000'" :stroke-width="aScaledHatchStroke" />
       </pattern>
 
       <!-- A concentric pattern (transparent background for overlay) -->
       <pattern :id="aConcentricId" patternUnits="userSpaceOnUse" :width="size * 2" :height="size * 2">
-        <g :transform="`translate(${centerX + aConcOffsetX}, ${centerY + aConcOffsetY})`">
+        <g :transform="`translate(${centerX + aScaledOffsetX}, ${centerY + aScaledOffsetY})`">
           <template v-for="i in aRings" :key="i">
-            <circle :cx="0" :cy="0" :r="i * aConcSpacing" fill="none" stroke="#000" :stroke-width="aConcStroke" />
+            <circle :cx="0" :cy="0" :r="i * aScaledConcSpacing" fill="none" stroke="#000" :stroke-width="aScaledConcStroke" />
           </template>
         </g>
       </pattern>
 
       <!-- B hatch pattern (transparent) -->
-      <pattern :id="bHatchId" patternUnits="userSpaceOnUse" :width="bHatchSpacing" :height="bHatchSpacing" :patternTransform="`rotate(${bLineAngle})`">
-        <line x1="0" y1="0" :x2="bHatchSpacing" y2="0" :stroke="'#000'" :stroke-width="bHatchStroke" />
+      <pattern :id="bHatchId" patternUnits="userSpaceOnUse" :width="bScaledHatchSpacing" :height="bScaledHatchSpacing" :patternTransform="`rotate(${bLineAngle})`">
+        <line x1="0" y1="0" :x2="bScaledHatchSpacing" y2="0" :stroke="'#000'" :stroke-width="bScaledHatchStroke" />
       </pattern>
 
       <!-- B concentric pattern (transparent) -->
       <pattern :id="bConcentricId" patternUnits="userSpaceOnUse" :width="size * 2" :height="size * 2">
-        <g :transform="`translate(${centerX + bConcOffsetX}, ${centerY + bConcOffsetY})`">
+        <g :transform="`translate(${centerX + bScaledOffsetX}, ${centerY + bScaledOffsetY})`">
           <template v-for="i in bRings" :key="i">
-            <circle :cx="0" :cy="0" :r="i * bConcSpacing" fill="none" stroke="#000" :stroke-width="bConcStroke" />
+            <circle :cx="0" :cy="0" :r="i * bScaledConcSpacing" fill="none" stroke="#000" :stroke-width="bScaledConcStroke" />
           </template>
         </g>
       </pattern>
