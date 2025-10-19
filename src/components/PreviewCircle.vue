@@ -27,6 +27,9 @@ const props = defineProps({
   aWavyWavelength: { type: Number, default: 24 },
   aWavySpacing: { type: Number, default: 12 },
   aWavyStroke: { type: Number, default: 1 },
+  aPerforatedDotRadius: { type: Number, default: 4 },
+  aPerforatedSeparation: { type: Number, default: 12 },
+  aPerforatedInvert: { type: Boolean, default: false },
 
   // Circle B pattern selection + settings
   bPattern: { type: String, default: 'concentric' },
@@ -41,6 +44,9 @@ const props = defineProps({
   bWavyWavelength: { type: Number, default: 24 },
   bWavySpacing: { type: Number, default: 12 },
   bWavyStroke: { type: Number, default: 1 },
+  bPerforatedDotRadius: { type: Number, default: 4 },
+  bPerforatedSeparation: { type: Number, default: 12 },
+  bPerforatedInvert: { type: Boolean, default: false },
 })
 
 const uid = Math.random().toString(36).slice(2, 8)
@@ -51,10 +57,14 @@ const clipId = `previewClip-${uid}`
 const aHatchId = `aHatch-${uid}`
 const aConcentricId = `aConcentric-${uid}`
 const aWavyId = `aWavy-${uid}`
+const aPerforatedId = `aPerforated-${uid}`
 // B pattern ids
 const bHatchId = `bHatch-${uid}`
 const bConcentricId = `bConcentric-${uid}`
 const bWavyId = `bWavy-${uid}`
+const bPerforatedId = `bPerforated-${uid}`
+const aPerforatedMaskId = `aPerforatedMask-${uid}`
+const bPerforatedMaskId = `bPerforatedMask-${uid}`
 
 const viewBox = computed(() => `0 0 ${props.size} ${props.size}`)
 const centerX = computed(() => (props.cx == null ? props.size / 2 : props.cx))
@@ -98,11 +108,21 @@ const aScaledWavyAmplitude = computed(() => props.aWavyAmplitude * scale.value)
 const aScaledWavyWavelength = computed(() => Math.max(1, props.aWavyWavelength * scale.value))
 const aScaledWavySpacing = computed(() => Math.max(1, props.aWavySpacing * scale.value))
 const aScaledWavyStroke = computed(() => props.aWavyStroke * scale.value)
+// A perforated scaled (interpret separation as hex edge length 'a')
+const aScaledDotR = computed(() => Math.max(0.5, props.aPerforatedDotRadius * scale.value))
+const aScaledHexA = computed(() => Math.max(1, props.aPerforatedSeparation * scale.value))
+const aColStep = computed(() => Math.sqrt(3) * aScaledHexA.value)
+const aRowStep = computed(() => 1.5 * aScaledHexA.value)
 
 const bScaledWavyAmplitude = computed(() => props.bWavyAmplitude * scale.value)
 const bScaledWavyWavelength = computed(() => Math.max(1, props.bWavyWavelength * scale.value))
 const bScaledWavySpacing = computed(() => Math.max(1, props.bWavySpacing * scale.value))
 const bScaledWavyStroke = computed(() => props.bWavyStroke * scale.value)
+// B perforated scaled (interpret separation as hex edge length 'a')
+const bScaledDotR = computed(() => Math.max(0.5, props.bPerforatedDotRadius * scale.value))
+const bScaledHexA = computed(() => Math.max(1, props.bPerforatedSeparation * scale.value))
+const bColStep = computed(() => Math.sqrt(3) * bScaledHexA.value)
+const bRowStep = computed(() => 1.5 * bScaledHexA.value)
 
 function makeWavePath(width, amplitude, samples, baselineY) {
   const n = Math.max(32, Math.min(1024, samples || Math.round(width * 2)))
@@ -158,6 +178,7 @@ const bHatchAngle = computed(() => (props.bLineAngle || 0) + bAngle.value)
 const bHatchTransform = computed(() => `rotate(${bHatchAngle.value}, ${centerX.value}, ${centerY.value})`)
 const bConcentricTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
 const bWavyTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
+const bPerforatedTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
 </script>
 
 <template>
@@ -193,6 +214,24 @@ const bWavyTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value},
         <path :d="makeWavePath(aScaledWavyWavelength, aScaledWavyAmplitude, 60, Math.max(aScaledWavySpacing, 2 * aScaledWavyAmplitude + aScaledWavyStroke) / 2)" fill="none" stroke="#000" :stroke-width="aScaledWavyStroke" stroke-linecap="round" stroke-linejoin="round" />
       </pattern>
 
+      <!-- A perforated honeycomb dots (transparent background) -->
+      <pattern :id="aPerforatedId" patternUnits="userSpaceOnUse" :width="aColStep" :height="aRowStep">
+        <template v-if="!aPerforatedInvert">
+          <!-- transparent bg with black dots -->
+          <circle :cx="aScaledDotR" :cy="aScaledDotR" :r="aScaledDotR" fill="#000" />
+          <circle :cx="(aColStep/2) + aScaledDotR" :cy="(aRowStep/2) + aScaledDotR" :r="aScaledDotR" fill="#000" />
+        </template>
+        <template v-else>
+          <!-- transparent bg with transparent holes cut from a black rect via mask -->
+          <mask :id="aPerforatedMaskId">
+            <rect :width="aColStep" :height="aRowStep" fill="white" />
+            <circle :cx="aScaledDotR" :cy="aScaledDotR" :r="aScaledDotR" fill="black" />
+            <circle :cx="(aColStep/2) + aScaledDotR" :cy="(aRowStep/2) + aScaledDotR" :r="aScaledDotR" fill="black" />
+          </mask>
+          <rect :width="aColStep" :height="aRowStep" fill="#000" :mask="`url(#${aPerforatedMaskId})`" />
+        </template>
+      </pattern>
+
       <!-- B hatch pattern (transparent) -->
       <pattern :id="bHatchId" patternUnits="userSpaceOnUse" :width="bScaledHatchSpacing" :height="bScaledHatchSpacing" :patternTransform="bHatchTransform">
         <line x1="0" y1="0" :x2="bScaledHatchSpacing" y2="0" :stroke="'#000'" :stroke-width="bScaledHatchStroke" />
@@ -211,6 +250,22 @@ const bWavyTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value},
       <pattern :id="bWavyId" patternUnits="userSpaceOnUse" :width="bScaledWavyWavelength" :height="Math.max(bScaledWavySpacing, 2 * bScaledWavyAmplitude + bScaledWavyStroke)" :patternTransform="bWavyTransform">
         <path :d="makeWavePath(bScaledWavyWavelength, bScaledWavyAmplitude, 60, Math.max(bScaledWavySpacing, 2 * bScaledWavyAmplitude + bScaledWavyStroke) / 2)" fill="none" stroke="#000" :stroke-width="bScaledWavyStroke" stroke-linecap="round" stroke-linejoin="round" />
       </pattern>
+
+      <!-- B perforated (transparent) -->
+      <pattern :id="bPerforatedId" patternUnits="userSpaceOnUse" :width="bColStep" :height="bRowStep" :patternTransform="bPerforatedTransform">
+        <template v-if="!bPerforatedInvert">
+          <circle :cx="bScaledDotR" :cy="bScaledDotR" :r="bScaledDotR" fill="#000" />
+          <circle :cx="(bColStep/2) + bScaledDotR" :cy="(bRowStep/2) + bScaledDotR" :r="bScaledDotR" fill="#000" />
+        </template>
+        <template v-else>
+          <mask :id="bPerforatedMaskId">
+            <rect :width="bColStep" :height="bRowStep" fill="white" />
+            <circle :cx="bScaledDotR" :cy="bScaledDotR" :r="bScaledDotR" fill="black" />
+            <circle :cx="(bColStep/2) + bScaledDotR" :cy="(bRowStep/2) + bScaledDotR" :r="bScaledDotR" fill="black" />
+          </mask>
+          <rect :width="bColStep" :height="bRowStep" fill="#000" :mask="`url(#${bPerforatedMaskId})`" />
+        </template>
+      </pattern>
     </defs>
 
     <g :clip-path="`url(#${clipId})`">
@@ -219,11 +274,13 @@ const bWavyTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value},
   <circle v-if="aPattern === 'hatch'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${aHatchId})`" />
   <circle v-else-if="aPattern === 'concentric'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${aConcentricId})`" />
   <circle v-else-if="aPattern === 'wavy'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${aWavyId})`" />
+  <circle v-else-if="aPattern === 'perforated'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${aPerforatedId})`" />
 
       <!-- Layer B fill if active -->
   <circle v-if="bPattern === 'hatch'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${bHatchId})`" />
   <circle v-else-if="bPattern === 'concentric'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${bConcentricId})`" />
   <circle v-else-if="bPattern === 'wavy'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${bWavyId})`" />
+  <circle v-else-if="bPattern === 'perforated'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${bPerforatedId})`" />
 
       <!-- Outline on top -->
       <circle :cx="centerX" :cy="centerY" :r="clampedR" :stroke="stroke" stroke-width="1" fill="none" />

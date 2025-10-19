@@ -5,7 +5,7 @@ import CombinedControls from './components/CombinedControls.vue'
 import PreviewCircle from './components/PreviewCircle.vue'
 
 // Circle A (left)
-const aPattern = ref('hatch') // 'hatch' | 'concentric' | 'wavy'
+const aPattern = ref('hatch') // 'hatch' | 'concentric' | 'wavy' | 'perforated'
 const aLineAngle = ref(70)
 const aHatchStroke = ref(6)
 const aHatchSpacing = ref(6)
@@ -17,9 +17,12 @@ const aWavyAmplitude = ref(6)
 const aWavyWavelength = ref(24)
 const aWavySpacing = ref(12)
 const aWavyStroke = ref(1)
+const aPerforatedDotRadius = ref(4)
+const aPerforatedSeparation = ref(12)
+const aPerforatedInvert = ref(false)
 
 // Circle B (right)
-const bPattern = ref('concentric') // 'hatch' | 'concentric' | 'wavy'
+const bPattern = ref('concentric') // 'hatch' | 'concentric' | 'wavy' | 'perforated'
 const bLineAngle = ref(0)
 const bHatchStroke = ref(6)
 const bHatchSpacing = ref(6)
@@ -31,6 +34,9 @@ const bWavyAmplitude = ref(6)
 const bWavyWavelength = ref(24)
 const bWavySpacing = ref(12)
 const bWavyStroke = ref(1)
+const bPerforatedDotRadius = ref(4)
+const bPerforatedSeparation = ref(12)
+const bPerforatedInvert = ref(false)
 const size = ref(300)
 const aRef = ref(null)
 const bRef = ref(null)
@@ -44,7 +50,7 @@ const previewRotateSpeed = ref(20)
 const SETTINGS_KEY = 'moireSettingsV1'
 
 function setNum(refVar, val) { if (typeof val === 'number') refVar.value = val }
-function setPattern(refVar, val) { if (val === 'hatch' || val === 'concentric' || val === 'wavy') refVar.value = val }
+function setPattern(refVar, val) { if (val === 'hatch' || val === 'concentric' || val === 'wavy' || val === 'perforated') refVar.value = val }
 
 function applyCircleSettings(which, src) {
   if (!src) return
@@ -61,6 +67,9 @@ function applyCircleSettings(which, src) {
     setNum(aWavyWavelength, src.aWavyWavelength)
     setNum(aWavySpacing, src.aWavySpacing)
     setNum(aWavyStroke, src.aWavyStroke)
+  setNum(aPerforatedDotRadius, src.aPerforatedDotRadius)
+  setNum(aPerforatedSeparation, src.aPerforatedSeparation)
+  if (typeof src.aPerforatedInvert === 'boolean') aPerforatedInvert.value = src.aPerforatedInvert
   } else if (which === 'b') {
     setPattern(bPattern, src.pattern)
     setNum(bLineAngle, src.lineAngle)
@@ -74,6 +83,9 @@ function applyCircleSettings(which, src) {
     setNum(bWavyWavelength, src.bWavyWavelength)
     setNum(bWavySpacing, src.bWavySpacing)
     setNum(bWavyStroke, src.bWavyStroke)
+  setNum(bPerforatedDotRadius, src.bPerforatedDotRadius)
+  setNum(bPerforatedSeparation, src.bPerforatedSeparation)
+  if (typeof src.bPerforatedInvert === 'boolean') bPerforatedInvert.value = src.bPerforatedInvert
   }
 }
 
@@ -105,6 +117,9 @@ function saveSettings() {
       aWavyWavelength: aWavyWavelength.value,
       aWavySpacing: aWavySpacing.value,
       aWavyStroke: aWavyStroke.value,
+  aPerforatedDotRadius: aPerforatedDotRadius.value,
+  aPerforatedSeparation: aPerforatedSeparation.value,
+  aPerforatedInvert: aPerforatedInvert.value,
     },
     b: {
       pattern: bPattern.value,
@@ -119,6 +134,9 @@ function saveSettings() {
       bWavyWavelength: bWavyWavelength.value,
       bWavySpacing: bWavySpacing.value,
       bWavyStroke: bWavyStroke.value,
+  bPerforatedDotRadius: bPerforatedDotRadius.value,
+  bPerforatedSeparation: bPerforatedSeparation.value,
+  bPerforatedInvert: bPerforatedInvert.value,
     },
     baseRefRadius: baseRefRadius.value,
   }
@@ -173,8 +191,9 @@ onBeforeUnmount(() => {
 watch([
   aPattern, aLineAngle, aHatchStroke, aHatchSpacing, aConcStroke, aConcSpacing, aConcOffsetX, aConcOffsetY,
   aWavyAmplitude, aWavyWavelength, aWavySpacing, aWavyStroke,
+  aPerforatedDotRadius, aPerforatedSeparation, aPerforatedInvert,
   bPattern, bLineAngle, bHatchStroke, bHatchSpacing, bConcStroke, bConcSpacing, bConcOffsetX, bConcOffsetY,
-  bWavyAmplitude, bWavyWavelength, bWavySpacing, bWavyStroke,
+  bWavyAmplitude, bWavyWavelength, bWavySpacing, bWavyStroke, bPerforatedDotRadius, bPerforatedSeparation, bPerforatedInvert,
   baseRefRadius,
 ], saveSettings, { deep: false })
 
@@ -192,6 +211,9 @@ function resetDefaults() {
   aWavyWavelength.value = 24
   aWavySpacing.value = 12
   aWavyStroke.value = 1
+  aPerforatedDotRadius.value = 4
+  aPerforatedSeparation.value = 12
+  aPerforatedInvert.value = false
 
   // Circle B defaults
   bPattern.value = 'concentric'
@@ -206,6 +228,9 @@ function resetDefaults() {
   bWavyWavelength.value = 24
   bWavySpacing.value = 12
   bWavyStroke.value = 1
+  bPerforatedDotRadius.value = 4
+  bPerforatedSeparation.value = 12
+  bPerforatedInvert.value = false
 
   // Global defaults
   baseRefRadius.value = 200
@@ -246,6 +271,9 @@ function resetDefaults() {
       :a-wavy-wavelength="aWavyWavelength" @update:aWavyWavelength="v => (aWavyWavelength = v)"
       :a-wavy-spacing="aWavySpacing" @update:aWavySpacing="v => (aWavySpacing = v)"
       :a-wavy-stroke="aWavyStroke" @update:aWavyStroke="v => (aWavyStroke = v)"
+  :a-perforated-dot-radius="aPerforatedDotRadius" @update:aPerforatedDotRadius="v => (aPerforatedDotRadius = v)"
+  :a-perforated-separation="aPerforatedSeparation" @update:aPerforatedSeparation="v => (aPerforatedSeparation = v)"
+  :a-perforated-invert="aPerforatedInvert" @update:aPerforatedInvert="v => (aPerforatedInvert = v)"
 
       :b-pattern="bPattern" @update:bPattern="v => (bPattern = v)"
       :b-line-angle="bLineAngle" @update:bLineAngle="v => (bLineAngle = v)"
@@ -259,23 +287,30 @@ function resetDefaults() {
       :b-wavy-wavelength="bWavyWavelength" @update:bWavyWavelength="v => (bWavyWavelength = v)"
       :b-wavy-spacing="bWavySpacing" @update:bWavySpacing="v => (bWavySpacing = v)"
       :b-wavy-stroke="bWavyStroke" @update:bWavyStroke="v => (bWavyStroke = v)"
+  :b-perforated-dot-radius="bPerforatedDotRadius" @update:bPerforatedDotRadius="v => (bPerforatedDotRadius = v)"
+  :b-perforated-separation="bPerforatedSeparation" @update:bPerforatedSeparation="v => (bPerforatedSeparation = v)"
+  :b-perforated-invert="bPerforatedInvert" @update:bPerforatedInvert="v => (bPerforatedInvert = v)"
       />
     </div>
       <div class="card stage">
         <div class="row">
           <SvgCircle ref="aRef" :size="size" :r="size/2 - 0.5 - 2"
-            :use-hatch="aPattern === 'hatch'" :use-concentric="aPattern === 'concentric'" :use-wavy="aPattern === 'wavy'"
+            :use-hatch="aPattern === 'hatch'" :use-concentric="aPattern === 'concentric'" :use-wavy="aPattern === 'wavy'" :use-perforated="aPattern === 'perforated'"
             :line-angle="aLineAngle" :line-stroke-width="aHatchStroke" :line-spacing="aHatchSpacing"
             :concentric-stroke-width="aConcStroke" :concentric-spacing="aConcSpacing"
             :concentric-offset-x="aConcOffsetX" :concentric-offset-y="aConcOffsetY" :base-ref-radius="baseRefRadius"
             :wavy-amplitude="aWavyAmplitude" :wavy-wavelength="aWavyWavelength" :wavy-spacing="aWavySpacing" :wavy-stroke-width="aWavyStroke"
+            :perforated-dot-radius="aPerforatedDotRadius" :perforated-separation="aPerforatedSeparation"
+            :perforated-invert="aPerforatedInvert"
             aria-label="Circle A" />
           <SvgCircle ref="bRef" :size="size" :r="size/2 - 0.5 - 2"
-            :use-hatch="bPattern === 'hatch'" :use-concentric="bPattern === 'concentric'" :use-wavy="bPattern === 'wavy'"
+            :use-hatch="bPattern === 'hatch'" :use-concentric="bPattern === 'concentric'" :use-wavy="bPattern === 'wavy'" :use-perforated="bPattern === 'perforated'"
             :line-angle="bLineAngle" :line-stroke-width="bHatchStroke" :line-spacing="bHatchSpacing"
             :concentric-stroke-width="bConcStroke" :concentric-spacing="bConcSpacing"
             :concentric-offset-x="bConcOffsetX" :concentric-offset-y="bConcOffsetY" :base-ref-radius="baseRefRadius"
             :wavy-amplitude="bWavyAmplitude" :wavy-wavelength="bWavyWavelength" :wavy-spacing="bWavySpacing" :wavy-stroke-width="bWavyStroke"
+            :perforated-dot-radius="bPerforatedDotRadius" :perforated-separation="bPerforatedSeparation"
+            :perforated-invert="bPerforatedInvert"
             aria-label="Circle B" />
         </div>
         <div class="preview">
@@ -297,6 +332,9 @@ function resetDefaults() {
             :a-wavy-wavelength="aWavyWavelength"
             :a-wavy-spacing="aWavySpacing"
             :a-wavy-stroke="aWavyStroke"
+            :a-perforated-dot-radius="aPerforatedDotRadius"
+            :a-perforated-separation="aPerforatedSeparation"
+            :a-perforated-invert="aPerforatedInvert"
 
             :b-pattern="bPattern"
             :b-line-angle="bLineAngle"
@@ -310,6 +348,9 @@ function resetDefaults() {
             :b-wavy-wavelength="bWavyWavelength"
             :b-wavy-spacing="bWavySpacing"
             :b-wavy-stroke="bWavyStroke"
+            :b-perforated-dot-radius="bPerforatedDotRadius"
+            :b-perforated-separation="bPerforatedSeparation"
+            :b-perforated-invert="bPerforatedInvert"
             aria-label="Preview Overlay"
           />
         </div>

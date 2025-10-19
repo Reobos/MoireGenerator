@@ -13,6 +13,9 @@ const props = defineProps({
   aWavyWavelength: { type: Number, default: 24 },
   aWavySpacing: { type: Number, default: 12 },
   aWavyStroke: { type: Number, default: 1 },
+  aPerforatedDotRadius: { type: Number, default: 4 },
+  aPerforatedSeparation: { type: Number, default: 12 },
+  aPerforatedInvert: { type: Boolean, default: false },
   // Circle B
   bPattern: { type: String, default: 'concentric' },
   bLineAngle: { type: Number, default: 0 },
@@ -26,15 +29,22 @@ const props = defineProps({
   bWavyWavelength: { type: Number, default: 24 },
   bWavySpacing: { type: Number, default: 12 },
   bWavyStroke: { type: Number, default: 1 },
+  bPerforatedDotRadius: { type: Number, default: 4 },
+  bPerforatedSeparation: { type: Number, default: 12 },
+  bPerforatedInvert: { type: Boolean, default: false },
 })
 
 const emit = defineEmits([
   'update:aPattern','update:aLineAngle','update:aHatchStroke','update:aHatchSpacing',
   'update:aConcStroke','update:aConcSpacing','update:aConcOffsetX','update:aConcOffsetY',
   'update:aWavyAmplitude','update:aWavyWavelength','update:aWavySpacing','update:aWavyStroke',
+  'update:aPerforatedDotRadius','update:aPerforatedSeparation',
+  'update:aPerforatedInvert',
   'update:bPattern','update:bLineAngle','update:bHatchStroke','update:bHatchSpacing',
   'update:bConcStroke','update:bConcSpacing','update:bConcOffsetX','update:bConcOffsetY',
   'update:bWavyAmplitude','update:bWavyWavelength','update:bWavySpacing','update:bWavyStroke',
+  'update:bPerforatedDotRadius','update:bPerforatedSeparation',
+  'update:bPerforatedInvert',
 ])
 
 const uid = Math.random().toString(36).slice(2, 8)
@@ -81,6 +91,7 @@ const ids = {
           <option value="hatch">Hatch</option>
           <option value="concentric">Concentric</option>
           <option value="wavy">Wavy</option>
+          <option value="perforated">Perforated</option>
         </select>
       </div>
 
@@ -125,7 +136,7 @@ const ids = {
           <input class="num" type="number" min="-1000" max="1000" step="1" :value="aConcOffsetY" @input="e => emit('update:aConcOffsetY', +(e.target.value))" />
         </div>
         </template>
-        <template v-else>
+        <template v-else-if="aPattern === 'wavy'">
           <div class="row">
             <label :for="ids.a.wamp">Amplitude</label>
             <input :id="ids.a.wamp" type="range" min="1" max="100" step="1" :value="aWavyAmplitude" @input="e => emit('update:aWavyAmplitude', +(e.target.value))" />
@@ -147,6 +158,22 @@ const ids = {
             <input :id="ids.a.wstroke + '-n'" class="num" type="number" min="1" max="50" step="1" :value="aWavyStroke" @input="e => emit('update:aWavyStroke', +(e.target.value))" />
           </div>
         </template>
+        <template v-else>
+          <div class="row">
+            <label :for="ids.a.wamp">Dot radius</label>
+            <input :id="ids.a.wamp" type="range" min="1" max="50" step="1" :value="aPerforatedDotRadius" @input="e => emit('update:aPerforatedDotRadius', +(e.target.value))" />
+            <input :id="ids.a.wamp + '-n'" class="num" type="number" min="1" max="500" step="1" :value="aPerforatedDotRadius" @input="e => emit('update:aPerforatedDotRadius', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.a.wwave">Separation</label>
+            <input :id="ids.a.wwave" type="range" min="2" max="200" step="1" :value="aPerforatedSeparation" @input="e => emit('update:aPerforatedSeparation', +(e.target.value))" />
+            <input :id="ids.a.wwave + '-n'" class="num" type="number" min="2" max="2000" step="1" :value="aPerforatedSeparation" @input="e => emit('update:aPerforatedSeparation', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.a.wstroke">Invert</label>
+            <input :id="ids.a.wstroke" type="checkbox" :checked="aPerforatedInvert" @change="e => emit('update:aPerforatedInvert', e.target.checked)" />
+          </div>
+        </template>
       </template>
     </div>
 
@@ -158,6 +185,7 @@ const ids = {
           <option value="hatch">Hatch</option>
           <option value="concentric">Concentric</option>
           <option value="wavy">Wavy</option>
+          <option value="perforated">Perforated</option>
         </select>
       </div>
 
@@ -202,7 +230,7 @@ const ids = {
           <input class="num" type="number" min="-1000" max="1000" step="1" :value="bConcOffsetY" @input="e => emit('update:bConcOffsetY', +(e.target.value))" />
         </div>
         </template>
-        <template v-else>
+        <template v-else-if="bPattern === 'wavy'">
           <div class="row">
             <label :for="ids.b.wamp">Amplitude</label>
             <input :id="ids.b.wamp" type="range" min="1" max="100" step="1" :value="bWavyAmplitude" @input="e => emit('update:bWavyAmplitude', +(e.target.value))" />
@@ -222,6 +250,22 @@ const ids = {
             <label :for="ids.b.wstroke">Stroke</label>
             <input :id="ids.b.wstroke" type="range" min="1" max="20" step="1" :value="bWavyStroke" @input="e => emit('update:bWavyStroke', +(e.target.value))" />
             <input :id="ids.b.wstroke + '-n'" class="num" type="number" min="1" max="50" step="1" :value="bWavyStroke" @input="e => emit('update:bWavyStroke', +(e.target.value))" />
+          </div>
+        </template>
+        <template v-else>
+          <div class="row">
+            <label :for="ids.b.wamp">Dot radius</label>
+            <input :id="ids.b.wamp" type="range" min="1" max="50" step="1" :value="bPerforatedDotRadius" @input="e => emit('update:bPerforatedDotRadius', +(e.target.value))" />
+            <input :id="ids.b.wamp + '-n'" class="num" type="number" min="1" max="500" step="1" :value="bPerforatedDotRadius" @input="e => emit('update:bPerforatedDotRadius', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.b.wwave">Separation</label>
+            <input :id="ids.b.wwave" type="range" min="2" max="200" step="1" :value="bPerforatedSeparation" @input="e => emit('update:bPerforatedSeparation', +(e.target.value))" />
+            <input :id="ids.b.wwave + '-n'" class="num" type="number" min="2" max="2000" step="1" :value="bPerforatedSeparation" @input="e => emit('update:bPerforatedSeparation', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.b.wstroke">Invert</label>
+            <input :id="ids.b.wstroke" type="checkbox" :checked="bPerforatedInvert" @change="e => emit('update:bPerforatedInvert', e.target.checked)" />
           </div>
         </template>
       </template>

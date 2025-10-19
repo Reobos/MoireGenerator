@@ -34,6 +34,12 @@ const props = defineProps({
   wavySpacing: { type: Number, default: 12 },
   wavyStrokeWidth: { type: Number, default: 1 },
   wavyColor: { type: String, default: '#000' },
+  // perforated (honeycomb dots) options
+  usePerforated: { type: Boolean, default: false },
+  perforatedDotRadius: { type: Number, default: 4 },
+  perforatedSeparation: { type: Number, default: 12 },
+  perforatedColor: { type: String, default: '#000' },
+  perforatedInvert: { type: Boolean, default: false },
   // base reference radius for scaling pattern sizes
   baseRefRadius: { type: Number, default: 150 },
   // ARIA label for accessibility
@@ -47,6 +53,8 @@ const frameClipId = `svgCircleFrame-${uid}`
 const hatchPatternId = `circleHatch-${uid}`
 const concentricPatternId = `circleConcentric-${uid}`
 const wavyPatternId = `circleWavy-${uid}`
+const perforatedPatternId = `circlePerforated-${uid}`
+const perforatedMaskId = `circlePerforatedMask-${uid}`
 
 const viewBox = computed(() => `0 0 ${props.size} ${props.size}`)
 const centerX = computed(() => (props.cx == null ? props.size / 2 : props.cx))
@@ -62,6 +70,7 @@ const clampedR = computed(() => {
 
 const hatchUrl = computed(() => `url(#${hatchPatternId})`)
 const concentricUrl = computed(() => `url(#${concentricPatternId})`)
+const perforatedUrl = computed(() => `url(#${perforatedPatternId})`)
 
 // Keep pattern scale relative to circle radius using a base reference radius (configurable)
 const scale = computed(() => {
@@ -92,6 +101,16 @@ const scaledWavyAmplitude = computed(() => props.wavyAmplitude * scale.value)
 const scaledWavyWavelength = computed(() => Math.max(1, props.wavyWavelength * scale.value))
 const scaledWavySpacing = computed(() => Math.max(1, props.wavySpacing * scale.value))
 const scaledWavyStrokeWidth = computed(() => props.wavyStrokeWidth * scale.value)
+
+// Scaled perforated values
+// Interpret perforatedSeparation as hexagon edge length 'a'
+const scaledDotR = computed(() => Math.max(0.5, props.perforatedDotRadius * scale.value))
+const scaledHexA = computed(() => Math.max(1, props.perforatedSeparation * scale.value))
+// Pointy-top hex grid: center spacing vectors
+// Horizontal center spacing (dx) = sqrt(3) * a
+// Vertical center spacing (dy) = 1.5 * a
+const colStep = computed(() => Math.sqrt(3) * scaledHexA.value)
+const rowStep = computed(() => 1.5 * scaledHexA.value)
 
 function makeWavePath(width, amplitude, samples, baselineY) {
   // adaptive sampling: ~2 samples per pixel of wavelength, clamped
@@ -184,6 +203,46 @@ defineExpose({ getSvgString, svgEl })
           stroke-linejoin="round"
         />
       </pattern>
+
+      <pattern
+        :id="perforatedPatternId"
+        patternUnits="userSpaceOnUse"
+        :width="colStep"
+        :height="rowStep"
+      >
+        <template v-if="!perforatedInvert">
+          <!-- normal: black dots on white background -->
+          <rect :width="colStep" :height="rowStep" fill="white" />
+          <!-- base dots -->
+          <circle :cx="scaledDotR" :cy="scaledDotR" :r="scaledDotR" :fill="perforatedColor" />
+          <circle :cx="(colStep/2) + scaledDotR" :cy="(rowStep/2) + scaledDotR" :r="scaledDotR" :fill="perforatedColor" />
+          <!-- seam-safe duplicates from neighboring tiles (shifted negative) -->
+          <circle :cx="scaledDotR - colStep" :cy="scaledDotR" :r="scaledDotR" :fill="perforatedColor" />
+          <circle :cx="scaledDotR" :cy="scaledDotR - rowStep" :r="scaledDotR" :fill="perforatedColor" />
+          <circle :cx="scaledDotR - colStep" :cy="scaledDotR - rowStep" :r="scaledDotR" :fill="perforatedColor" />
+          <circle :cx="(colStep/2) + scaledDotR - colStep" :cy="(rowStep/2) + scaledDotR" :r="scaledDotR" :fill="perforatedColor" />
+          <circle :cx="(colStep/2) + scaledDotR" :cy="(rowStep/2) + scaledDotR - rowStep" :r="scaledDotR" :fill="perforatedColor" />
+          <circle :cx="(colStep/2) + scaledDotR - colStep" :cy="(rowStep/2) + scaledDotR - rowStep" :r="scaledDotR" :fill="perforatedColor" />
+        </template>
+        <template v-else>
+          <!-- invert: black background with transparent holes using mask -->
+          <mask :id="perforatedMaskId">
+            <rect :width="colStep" :height="rowStep" fill="white" />
+            <!-- black in mask = transparent area on the painted rect -->
+            <!-- base holes -->
+            <circle :cx="scaledDotR" :cy="scaledDotR" :r="scaledDotR" fill="black" />
+            <circle :cx="(colStep/2) + scaledDotR" :cy="(rowStep/2) + scaledDotR" :r="scaledDotR" fill="black" />
+            <!-- seam-safe duplicates from neighboring tiles (shifted negative) -->
+            <circle :cx="scaledDotR - colStep" :cy="scaledDotR" :r="scaledDotR" fill="black" />
+            <circle :cx="scaledDotR" :cy="scaledDotR - rowStep" :r="scaledDotR" fill="black" />
+            <circle :cx="scaledDotR - colStep" :cy="scaledDotR - rowStep" :r="scaledDotR" fill="black" />
+            <circle :cx="(colStep/2) + scaledDotR - colStep" :cy="(rowStep/2) + scaledDotR" :r="scaledDotR" fill="black" />
+            <circle :cx="(colStep/2) + scaledDotR" :cy="(rowStep/2) + scaledDotR - rowStep" :r="scaledDotR" fill="black" />
+            <circle :cx="(colStep/2) + scaledDotR - colStep" :cy="(rowStep/2) + scaledDotR - rowStep" :r="scaledDotR" fill="black" />
+          </mask>
+          <rect :width="colStep" :height="rowStep" fill="#000" :mask="`url(#${perforatedMaskId})`" />
+        </template>
+      </pattern>
     </defs>
 
     <g :clip-path="`url(#${frameClipId})`">
@@ -194,7 +253,7 @@ defineExpose({ getSvgString, svgEl })
         :r="clampedR"
         :stroke="stroke"
         stroke-width="1"
-        :fill="useWavy ? `url(#${wavyPatternId})` : (useConcentric ? concentricUrl : (useHatch ? hatchUrl : fill))"
+        :fill="useWavy ? `url(#${wavyPatternId})` : (useConcentric ? concentricUrl : (usePerforated ? perforatedUrl : (useHatch ? hatchUrl : fill)))"
       />
     </g>
   </svg>
