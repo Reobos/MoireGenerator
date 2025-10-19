@@ -383,6 +383,12 @@ function resetDefaults() {
         <input id="rotateSpeed" class="num" type="number" min="0" step="1" v-model.number="previewRotateSpeed" />
         <button type="button" @click="resetDefaults">Reset to defaults</button>
       </div>
+    <div class="export-row">
+      <button @click="exportACircle">Export SVG (A)</button>
+      <button @click="exportAPng">Export PNG (A)</button>
+      <button @click="exportBCircle">Export SVG (B)</button>
+      <button @click="exportBPng">Export PNG (B)</button>
+    </div>
     </div>
     <div class="card controls-card">
       <CombinedControls
@@ -481,12 +487,6 @@ function resetDefaults() {
             aria-label="Preview Overlay"
           />
         </div>
-      <div class="export-row">
-        <button @click="exportACircle">Export SVG (A)</button>
-        <button @click="exportBCircle">Export SVG (B)</button>
-        <button @click="exportAPng">Export PNG (A)</button>
-        <button @click="exportBPng">Export PNG (B)</button>
-      </div>
       </div>
   </div>
 </template>
@@ -572,6 +572,8 @@ function resetDefaults() {
   display: flex;
   gap: 0.5rem;
   flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
 }
 
 /* Responsive adjustments */
