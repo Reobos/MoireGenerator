@@ -45,6 +45,8 @@ const baseRefRadius = ref(200)
 // Preview animation controls
 const previewRotateB = ref(true)
 const previewRotateSpeed = ref(20)
+// Export options
+const exportDpi = ref(300)
 
 // Persist settings per circle/pattern
 const SETTINGS_KEY = 'moireSettingsV1'
@@ -97,6 +99,7 @@ function loadSettings() {
     applyCircleSettings('a', s?.a)
     applyCircleSettings('b', s?.b)
     if (typeof s?.baseRefRadius === 'number' && s.baseRefRadius > 0) baseRefRadius.value = s.baseRefRadius
+    if (typeof s?.exportDpi === 'number' && s.exportDpi > 0) exportDpi.value = Math.round(s.exportDpi)
   } catch (e) {
     console.warn('Failed to parse settings:', e)
   }
@@ -139,6 +142,7 @@ function saveSettings() {
   bPerforatedInvert: bPerforatedInvert.value,
     },
     baseRefRadius: baseRefRadius.value,
+    exportDpi: exportDpi.value,
   }
   try {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(s))
@@ -170,6 +174,126 @@ function exportBCircle() {
   downloadSvg('circle-b.svg', svg)
 }
 
+// Helper: remove stage background rects under the clipping group
+function removeStageBackgroundRects(svgRoot) {
+  const bgRects = svgRoot.querySelectorAll('g[clip-path] > rect')
+  for (const rect of bgRects) rect.remove()
+}
+
+// Helper: remove white pattern tile backgrounds (direct children of pattern only)
+function removeWhitePatternBackgrounds(svgRoot) {
+  const selectors = [
+    'defs pattern > rect[fill="white"]',
+    'defs pattern > rect[fill="#fff"]',
+    'defs pattern > rect[fill="#ffffff"]',
+  ]
+  const whiteRects = svgRoot.querySelectorAll(selectors.join(','))
+  for (const r of whiteRects) r.remove()
+}
+
+function setSvgPixelSize(svgRoot, exportPx) {
+  if (exportPx && Number.isFinite(exportPx)) {
+    svgRoot.setAttribute('width', String(exportPx))
+    svgRoot.setAttribute('height', String(exportPx))
+  }
+}
+
+function serializeSvg(svgRoot) {
+  const ser = new XMLSerializer()
+  return ser.serializeToString(svgRoot)
+}
+
+// Helper: parse and sanitize SVG string, output black+transparent ready SVG string
+function buildBlackTransparentSvgFromString(svgText, exportPx) {
+  if (!svgText) return ''
+  const parser = new DOMParser()
+  const doc = parser.parseFromString(svgText, 'image/svg+xml')
+  const svgRoot = doc.documentElement
+  if (!svgRoot || svgRoot.nodeName.toLowerCase() !== 'svg') return ''
+  svgRoot.setAttribute('xmlns', 'http://www.w3.org/2000/svg')
+  removeStageBackgroundRects(svgRoot)
+  removeWhitePatternBackgrounds(svgRoot)
+  setSvgPixelSize(svgRoot, exportPx)
+  return serializeSvg(svgRoot)
+}
+
+async function exportSvgRefToPng(refComp, fileBase) {
+  const dpi = Math.max(1, Math.round(exportDpi.value || 300))
+  const sizePx = Number(size.value) || 300
+  const exportPx = Math.round((sizePx * dpi) / 96)
+  // Prefer exposed serializer; fallback to component root element if available
+  const originalSvg = refComp?.getSvgString?.() || refComp?.$el?.outerHTML || ''
+  const svgString = buildBlackTransparentSvgFromString(originalSvg, exportPx)
+  if (!svgString) { console.log('no svg string'); return }
+  const blob = new Blob([svgString], { type: 'image/svg+xml;charset=utf-8' })
+  const url = URL.createObjectURL(blob)
+  try {
+    const img = new Image()
+    await new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        cleanup()
+        reject(new Error('Image load timeout'))
+      }, 10000)
+      function cleanup() {
+        clearTimeout(timer)
+        img.onload = null
+        img.onerror = null
+      }
+      img.onload = () => { cleanup(); resolve(null) }
+      img.onerror = () => { cleanup(); reject(new Error('Image failed to load')) }
+      img.src = url
+    })
+
+    const canvas = document.createElement('canvas')
+    canvas.width = exportPx
+    canvas.height = exportPx
+    const ctx = canvas.getContext('2d', { willReadFrequently: true })
+    if (!ctx) return
+    ctx.imageSmoothingEnabled = true
+    ctx.imageSmoothingQuality = 'high'
+    ctx.clearRect(0, 0, canvas.width, canvas.height)
+    ctx.drawImage(img, 0, 0, exportPx, exportPx)
+
+    // Force RGB to black for all non-transparent pixels: guarantees only black + alpha
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height)
+    const data = imageData.data
+    for (let i = 0; i < data.length; i += 4) {
+      const alpha = data[i + 3]
+      if (alpha !== 0) {
+        data[i] = 0 // R
+        data[i + 1] = 0 // G
+        data[i + 2] = 0 // B
+      }
+    }
+    ctx.putImageData(imageData, 0, 0)
+
+    await new Promise((resolve) => {
+      canvas.toBlob(blob => {
+        if (blob) {
+          const pngUrl = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = pngUrl
+          a.download = `${fileBase}-${dpi}dpi.png`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          URL.revokeObjectURL(pngUrl)
+        }
+        resolve()
+      }, 'image/png')
+    })
+  } catch (e) {
+    console.error('PNG export failed:', e)
+    // Optional: lightweight user notification
+    try { alert('PNG export failed. See console for details.') } catch {}
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+function exportAPng() { exportSvgRefToPng(aRef.value, 'circle-a') }
+function exportBPng() { exportSvgRefToPng(bRef.value, 'circle-b') }
+
 function updateSize() {
   // Use a fraction of the viewport so the circle doesn't fill the entire screen
   const fraction = 0.7
@@ -194,7 +318,7 @@ watch([
   aPerforatedDotRadius, aPerforatedSeparation, aPerforatedInvert,
   bPattern, bLineAngle, bHatchStroke, bHatchSpacing, bConcStroke, bConcSpacing, bConcOffsetX, bConcOffsetY,
   bWavyAmplitude, bWavyWavelength, bWavySpacing, bWavyStroke, bPerforatedDotRadius, bPerforatedSeparation, bPerforatedInvert,
-  baseRefRadius,
+  baseRefRadius, exportDpi,
 ], saveSettings, { deep: false })
 
 function resetDefaults() {
@@ -238,6 +362,7 @@ function resetDefaults() {
   // Animation defaults
   previewRotateB.value = true
   previewRotateSpeed.value = 20
+  exportDpi.value = 300
 
   // Persist the defaults
   saveSettings()
@@ -250,6 +375,8 @@ function resetDefaults() {
       <div class="global-control">
         <label for="baseRefRadius">Base reference radius</label>
         <input id="baseRefRadius" class="num" type="number" min="1" step="1" v-model.number="baseRefRadius" />
+          <label for="exportDpi">Export DPI</label>
+          <input id="exportDpi" class="num" type="number" min="36" step="1" v-model.number="exportDpi" />
         <label for="rotateB">Rotate B</label>
         <input id="rotateB" type="checkbox" v-model="previewRotateB" />
         <label for="rotateSpeed">Speed</label>
@@ -357,6 +484,8 @@ function resetDefaults() {
       <div class="export-row">
         <button @click="exportACircle">Export SVG (A)</button>
         <button @click="exportBCircle">Export SVG (B)</button>
+        <button @click="exportAPng">Export PNG (A)</button>
+        <button @click="exportBPng">Export PNG (B)</button>
       </div>
       </div>
   </div>

@@ -218,15 +218,31 @@ const bPerforatedTransform = computed(() => `rotate(${bAngle.value}, ${centerX.v
       <pattern :id="aPerforatedId" patternUnits="userSpaceOnUse" :width="aColStep" :height="aRowStep">
         <template v-if="!aPerforatedInvert">
           <!-- transparent bg with black dots -->
+          <!-- base dots -->
           <circle :cx="aScaledDotR" :cy="aScaledDotR" :r="aScaledDotR" fill="#000" />
           <circle :cx="(aColStep/2) + aScaledDotR" :cy="(aRowStep/2) + aScaledDotR" :r="aScaledDotR" fill="#000" />
+          <!-- seam-safe duplicates from neighboring tiles (shifted negative) -->
+          <circle :cx="aScaledDotR - aColStep" :cy="aScaledDotR" :r="aScaledDotR" fill="#000" />
+          <circle :cx="aScaledDotR" :cy="aScaledDotR - aRowStep" :r="aScaledDotR" fill="#000" />
+          <circle :cx="aScaledDotR - aColStep" :cy="aScaledDotR - aRowStep" :r="aScaledDotR" fill="#000" />
+          <circle :cx="(aColStep/2) + aScaledDotR - aColStep" :cy="(aRowStep/2) + aScaledDotR" :r="aScaledDotR" fill="#000" />
+          <circle :cx="(aColStep/2) + aScaledDotR" :cy="(aRowStep/2) + aScaledDotR - aRowStep" :r="aScaledDotR" fill="#000" />
+          <circle :cx="(aColStep/2) + aScaledDotR - aColStep" :cy="(aRowStep/2) + aScaledDotR - aRowStep" :r="aScaledDotR" fill="#000" />
         </template>
         <template v-else>
           <!-- transparent bg with transparent holes cut from a black rect via mask -->
           <mask :id="aPerforatedMaskId">
             <rect :width="aColStep" :height="aRowStep" fill="white" />
+            <!-- base holes -->
             <circle :cx="aScaledDotR" :cy="aScaledDotR" :r="aScaledDotR" fill="black" />
             <circle :cx="(aColStep/2) + aScaledDotR" :cy="(aRowStep/2) + aScaledDotR" :r="aScaledDotR" fill="black" />
+            <!-- seam-safe duplicates from neighboring tiles (shifted negative) -->
+            <circle :cx="aScaledDotR - aColStep" :cy="aScaledDotR" :r="aScaledDotR" fill="black" />
+            <circle :cx="aScaledDotR" :cy="aScaledDotR - aRowStep" :r="aScaledDotR" fill="black" />
+            <circle :cx="aScaledDotR - aColStep" :cy="aScaledDotR - aRowStep" :r="aScaledDotR" fill="black" />
+            <circle :cx="(aColStep/2) + aScaledDotR - aColStep" :cy="(aRowStep/2) + aScaledDotR" :r="aScaledDotR" fill="black" />
+            <circle :cx="(aColStep/2) + aScaledDotR" :cy="(aRowStep/2) + aScaledDotR - aRowStep" :r="aScaledDotR" fill="black" />
+            <circle :cx="(aColStep/2) + aScaledDotR - aColStep" :cy="(aRowStep/2) + aScaledDotR - aRowStep" :r="aScaledDotR" fill="black" />
           </mask>
           <rect :width="aColStep" :height="aRowStep" fill="#000" :mask="`url(#${aPerforatedMaskId})`" />
         </template>
@@ -254,14 +270,30 @@ const bPerforatedTransform = computed(() => `rotate(${bAngle.value}, ${centerX.v
       <!-- B perforated (transparent) -->
       <pattern :id="bPerforatedId" patternUnits="userSpaceOnUse" :width="bColStep" :height="bRowStep" :patternTransform="bPerforatedTransform">
         <template v-if="!bPerforatedInvert">
+          <!-- base dots -->
           <circle :cx="bScaledDotR" :cy="bScaledDotR" :r="bScaledDotR" fill="#000" />
           <circle :cx="(bColStep/2) + bScaledDotR" :cy="(bRowStep/2) + bScaledDotR" :r="bScaledDotR" fill="#000" />
+          <!-- seam-safe duplicates from neighboring tiles (shifted negative) -->
+          <circle :cx="bScaledDotR - bColStep" :cy="bScaledDotR" :r="bScaledDotR" fill="#000" />
+          <circle :cx="bScaledDotR" :cy="bScaledDotR - bRowStep" :r="bScaledDotR" fill="#000" />
+          <circle :cx="bScaledDotR - bColStep" :cy="bScaledDotR - bRowStep" :r="bScaledDotR" fill="#000" />
+          <circle :cx="(bColStep/2) + bScaledDotR - bColStep" :cy="(bRowStep/2) + bScaledDotR" :r="bScaledDotR" fill="#000" />
+          <circle :cx="(bColStep/2) + bScaledDotR" :cy="(bRowStep/2) + bScaledDotR - bRowStep" :r="bScaledDotR" fill="#000" />
+          <circle :cx="(bColStep/2) + bScaledDotR - bColStep" :cy="(bRowStep/2) + bScaledDotR - bRowStep" :r="bScaledDotR" fill="#000" />
         </template>
         <template v-else>
           <mask :id="bPerforatedMaskId">
             <rect :width="bColStep" :height="bRowStep" fill="white" />
+            <!-- base holes -->
             <circle :cx="bScaledDotR" :cy="bScaledDotR" :r="bScaledDotR" fill="black" />
             <circle :cx="(bColStep/2) + bScaledDotR" :cy="(bRowStep/2) + bScaledDotR" :r="bScaledDotR" fill="black" />
+            <!-- seam-safe duplicates from neighboring tiles (shifted negative) -->
+            <circle :cx="bScaledDotR - bColStep" :cy="bScaledDotR" :r="bScaledDotR" fill="black" />
+            <circle :cx="bScaledDotR" :cy="bScaledDotR - bRowStep" :r="bScaledDotR" fill="black" />
+            <circle :cx="bScaledDotR - bColStep" :cy="bScaledDotR - bRowStep" :r="bScaledDotR" fill="black" />
+            <circle :cx="(bColStep/2) + bScaledDotR - bColStep" :cy="(bRowStep/2) + bScaledDotR" :r="bScaledDotR" fill="black" />
+            <circle :cx="(bColStep/2) + bScaledDotR" :cy="(bRowStep/2) + bScaledDotR - bRowStep" :r="bScaledDotR" fill="black" />
+            <circle :cx="(bColStep/2) + bScaledDotR - bColStep" :cy="(bRowStep/2) + bScaledDotR - bRowStep" :r="bScaledDotR" fill="black" />
           </mask>
           <rect :width="bColStep" :height="bRowStep" fill="#000" :mask="`url(#${bPerforatedMaskId})`" />
         </template>
