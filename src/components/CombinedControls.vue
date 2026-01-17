@@ -12,6 +12,7 @@ const props = defineProps({
   aRadialSegments: { type: Number, default: 24 },
   aRadialCenterX: { type: Number, default: 0 },
   aRadialCenterY: { type: Number, default: 0 },
+  aRadialInnerRadius: { type: Number, default: 0 },
   aWavyAmplitude: { type: Number, default: 6 },
   aWavyWavelength: { type: Number, default: 24 },
   aWavySpacing: { type: Number, default: 12 },
@@ -31,6 +32,7 @@ const props = defineProps({
   bRadialSegments: { type: Number, default: 24 },
   bRadialCenterX: { type: Number, default: 0 },
   bRadialCenterY: { type: Number, default: 0 },
+  bRadialInnerRadius: { type: Number, default: 0 },
   bWavyAmplitude: { type: Number, default: 6 },
   bWavyWavelength: { type: Number, default: 24 },
   bWavySpacing: { type: Number, default: 12 },
@@ -43,13 +45,13 @@ const props = defineProps({
 const emit = defineEmits([
   'update:aPattern','update:aLineAngle','update:aHatchStroke','update:aHatchSpacing',
   'update:aConcStroke','update:aConcSpacing','update:aConcOffsetX','update:aConcOffsetY',
-  'update:aRadialSegments','update:aRadialCenterX','update:aRadialCenterY',
+  'update:aRadialSegments','update:aRadialCenterX','update:aRadialCenterY','update:aRadialInnerRadius',
   'update:aWavyAmplitude','update:aWavyWavelength','update:aWavySpacing','update:aWavyStroke',
   'update:aPerforatedDotRadius','update:aPerforatedSeparation',
   'update:aPerforatedInvert',
   'update:bPattern','update:bLineAngle','update:bHatchStroke','update:bHatchSpacing',
   'update:bConcStroke','update:bConcSpacing','update:bConcOffsetX','update:bConcOffsetY',
-  'update:bRadialSegments','update:bRadialCenterX','update:bRadialCenterY',
+  'update:bRadialSegments','update:bRadialCenterX','update:bRadialCenterY','update:bRadialInnerRadius',
   'update:bWavyAmplitude','update:bWavyWavelength','update:bWavySpacing','update:bWavyStroke',
   'update:bPerforatedDotRadius','update:bPerforatedSeparation',
   'update:bPerforatedInvert',
@@ -70,6 +72,7 @@ const ids = {
     rseg: `arse-${uid}`,
     rcx: `arcx-${uid}`,
     rcy: `arcy-${uid}`,
+    rin: `arin-${uid}`,
     wamp: `awamp-${uid}`,
     wwave: `awwav-${uid}`,
     wspace: `awsp-${uid}`,
@@ -87,6 +90,7 @@ const ids = {
     rseg: `brse-${uid}`,
     rcx: `brcx-${uid}`,
     rcy: `brcy-${uid}`,
+    rin: `brin-${uid}`,
     wamp: `bwamp-${uid}`,
     wwave: `bwwav-${uid}`,
     wspace: `bwsp-${uid}`,
@@ -156,6 +160,11 @@ const ids = {
             <label :for="ids.a.rseg">Segments</label>
             <input :id="ids.a.rseg" type="range" min="2" max="240" step="2" :value="aRadialSegments" @input="e => emit('update:aRadialSegments', +(e.target.value))" />
             <input class="num" type="number" min="2" max="720" step="2" :value="aRadialSegments" @input="e => emit('update:aRadialSegments', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.a.rin">Inner radius</label>
+            <input :id="ids.a.rin" type="range" min="0" max="200" step="1" :value="aRadialInnerRadius" @input="e => emit('update:aRadialInnerRadius', +(e.target.value))" />
+            <input class="num" type="number" min="0" max="2000" step="1" :value="aRadialInnerRadius" @input="e => emit('update:aRadialInnerRadius', +(e.target.value))" />
           </div>
           <div class="row">
             <label :for="ids.a.rcx">Center X</label>
@@ -268,6 +277,11 @@ const ids = {
             <label :for="ids.b.rseg">Segments</label>
             <input :id="ids.b.rseg" type="range" min="2" max="240" step="2" :value="bRadialSegments" @input="e => emit('update:bRadialSegments', +(e.target.value))" />
             <input class="num" type="number" min="2" max="720" step="2" :value="bRadialSegments" @input="e => emit('update:bRadialSegments', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.b.rin">Inner radius</label>
+            <input :id="ids.b.rin" type="range" min="0" max="200" step="1" :value="bRadialInnerRadius" @input="e => emit('update:bRadialInnerRadius', +(e.target.value))" />
+            <input class="num" type="number" min="0" max="2000" step="1" :value="bRadialInnerRadius" @input="e => emit('update:bRadialInnerRadius', +(e.target.value))" />
           </div>
           <div class="row">
             <label :for="ids.b.rcx">Center X</label>

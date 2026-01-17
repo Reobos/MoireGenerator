@@ -16,6 +16,7 @@ const aConcOffsetY = ref(0)
 const aRadialSegments = ref(24)
 const aRadialCenterX = ref(0)
 const aRadialCenterY = ref(0)
+const aRadialInnerRadius = ref(20)
 const aWavyAmplitude = ref(6)
 const aWavyWavelength = ref(24)
 const aWavySpacing = ref(12)
@@ -36,6 +37,7 @@ const bConcOffsetY = ref(30)
 const bRadialSegments = ref(24)
 const bRadialCenterX = ref(0)
 const bRadialCenterY = ref(0)
+const bRadialInnerRadius = ref(20)
 const bWavyAmplitude = ref(6)
 const bWavyWavelength = ref(24)
 const bWavySpacing = ref(12)
@@ -83,6 +85,7 @@ function applyCircleSettings(which, src) {
     setEvenSegments(aRadialSegments, src.aRadialSegments)
     setNum(aRadialCenterX, src.aRadialCenterX)
     setNum(aRadialCenterY, src.aRadialCenterY)
+    setNum(aRadialInnerRadius, src.aRadialInnerRadius)
     setNum(aWavyAmplitude, src.aWavyAmplitude)
     setNum(aWavyWavelength, src.aWavyWavelength)
     setNum(aWavySpacing, src.aWavySpacing)
@@ -102,6 +105,7 @@ function applyCircleSettings(which, src) {
     setEvenSegments(bRadialSegments, src.bRadialSegments)
     setNum(bRadialCenterX, src.bRadialCenterX)
     setNum(bRadialCenterY, src.bRadialCenterY)
+    setNum(bRadialInnerRadius, src.bRadialInnerRadius)
     setNum(bWavyAmplitude, src.bWavyAmplitude)
     setNum(bWavyWavelength, src.bWavyWavelength)
     setNum(bWavySpacing, src.bWavySpacing)
@@ -140,6 +144,7 @@ function saveSettings() {
       aRadialSegments: aRadialSegments.value,
       aRadialCenterX: aRadialCenterX.value,
       aRadialCenterY: aRadialCenterY.value,
+      aRadialInnerRadius: aRadialInnerRadius.value,
       aWavyAmplitude: aWavyAmplitude.value,
       aWavyWavelength: aWavyWavelength.value,
       aWavySpacing: aWavySpacing.value,
@@ -160,6 +165,7 @@ function saveSettings() {
       bRadialSegments: bRadialSegments.value,
       bRadialCenterX: bRadialCenterX.value,
       bRadialCenterY: bRadialCenterY.value,
+      bRadialInnerRadius: bRadialInnerRadius.value,
       bWavyAmplitude: bWavyAmplitude.value,
       bWavyWavelength: bWavyWavelength.value,
       bWavySpacing: bWavySpacing.value,
@@ -356,11 +362,11 @@ watch(bRadialSegments, (v) => {
 // Save whenever any relevant control changes
 watch([
   aPattern, aLineAngle, aHatchStroke, aHatchSpacing, aConcStroke, aConcSpacing, aConcOffsetX, aConcOffsetY,
-  aRadialSegments, aRadialCenterX, aRadialCenterY,
+  aRadialSegments, aRadialCenterX, aRadialCenterY, aRadialInnerRadius,
   aWavyAmplitude, aWavyWavelength, aWavySpacing, aWavyStroke,
   aPerforatedDotRadius, aPerforatedSeparation, aPerforatedInvert,
   bPattern, bLineAngle, bHatchStroke, bHatchSpacing, bConcStroke, bConcSpacing, bConcOffsetX, bConcOffsetY,
-  bRadialSegments, bRadialCenterX, bRadialCenterY,
+  bRadialSegments, bRadialCenterX, bRadialCenterY, bRadialInnerRadius,
   bWavyAmplitude, bWavyWavelength, bWavySpacing, bWavyStroke, bPerforatedDotRadius, bPerforatedSeparation, bPerforatedInvert,
   baseRefRadius, exportDpi,
 ], saveSettings, { deep: false })
@@ -378,6 +384,7 @@ function resetDefaults() {
   aRadialSegments.value = 24
   aRadialCenterX.value = 0
   aRadialCenterY.value = 0
+  aRadialInnerRadius.value = 20
   aWavyAmplitude.value = 6
   aWavyWavelength.value = 24
   aWavySpacing.value = 12
@@ -398,6 +405,7 @@ function resetDefaults() {
   bRadialSegments.value = 24
   bRadialCenterX.value = 0
   bRadialCenterY.value = 0
+  bRadialInnerRadius.value = 20
   bWavyAmplitude.value = 6
   bWavyWavelength.value = 24
   bWavySpacing.value = 12
@@ -453,6 +461,7 @@ function resetDefaults() {
       :a-radial-segments="aRadialSegments" @update:aRadialSegments="v => (aRadialSegments = v)"
       :a-radial-center-x="aRadialCenterX" @update:aRadialCenterX="v => (aRadialCenterX = v)"
       :a-radial-center-y="aRadialCenterY" @update:aRadialCenterY="v => (aRadialCenterY = v)"
+      :a-radial-inner-radius="aRadialInnerRadius" @update:aRadialInnerRadius="v => (aRadialInnerRadius = v)"
       :a-wavy-amplitude="aWavyAmplitude" @update:aWavyAmplitude="v => (aWavyAmplitude = v)"
       :a-wavy-wavelength="aWavyWavelength" @update:aWavyWavelength="v => (aWavyWavelength = v)"
       :a-wavy-spacing="aWavySpacing" @update:aWavySpacing="v => (aWavySpacing = v)"
@@ -472,6 +481,7 @@ function resetDefaults() {
       :b-radial-segments="bRadialSegments" @update:bRadialSegments="v => (bRadialSegments = v)"
       :b-radial-center-x="bRadialCenterX" @update:bRadialCenterX="v => (bRadialCenterX = v)"
       :b-radial-center-y="bRadialCenterY" @update:bRadialCenterY="v => (bRadialCenterY = v)"
+      :b-radial-inner-radius="bRadialInnerRadius" @update:bRadialInnerRadius="v => (bRadialInnerRadius = v)"
       :b-wavy-amplitude="bWavyAmplitude" @update:bWavyAmplitude="v => (bWavyAmplitude = v)"
       :b-wavy-wavelength="bWavyWavelength" @update:bWavyWavelength="v => (bWavyWavelength = v)"
       :b-wavy-spacing="bWavySpacing" @update:bWavySpacing="v => (bWavySpacing = v)"
@@ -489,6 +499,7 @@ function resetDefaults() {
             :concentric-stroke-width="aConcStroke" :concentric-spacing="aConcSpacing"
             :concentric-offset-x="aConcOffsetX" :concentric-offset-y="aConcOffsetY" :base-ref-radius="baseRefRadius"
             :radial-segments="aRadialSegments" :radial-center-offset-x="aRadialCenterX" :radial-center-offset-y="aRadialCenterY"
+            :radial-inner-radius="aRadialInnerRadius"
             :wavy-amplitude="aWavyAmplitude" :wavy-wavelength="aWavyWavelength" :wavy-spacing="aWavySpacing" :wavy-stroke-width="aWavyStroke"
             :perforated-dot-radius="aPerforatedDotRadius" :perforated-separation="aPerforatedSeparation"
             :perforated-invert="aPerforatedInvert"
@@ -499,6 +510,7 @@ function resetDefaults() {
             :concentric-stroke-width="bConcStroke" :concentric-spacing="bConcSpacing"
             :concentric-offset-x="bConcOffsetX" :concentric-offset-y="bConcOffsetY" :base-ref-radius="baseRefRadius"
             :radial-segments="bRadialSegments" :radial-center-offset-x="bRadialCenterX" :radial-center-offset-y="bRadialCenterY"
+            :radial-inner-radius="bRadialInnerRadius"
             :wavy-amplitude="bWavyAmplitude" :wavy-wavelength="bWavyWavelength" :wavy-spacing="bWavySpacing" :wavy-stroke-width="bWavyStroke"
             :perforated-dot-radius="bPerforatedDotRadius" :perforated-separation="bPerforatedSeparation"
             :perforated-invert="bPerforatedInvert"
@@ -522,6 +534,7 @@ function resetDefaults() {
             :a-radial-segments="aRadialSegments"
             :a-radial-center-x="aRadialCenterX"
             :a-radial-center-y="aRadialCenterY"
+            :a-radial-inner-radius="aRadialInnerRadius"
             :a-wavy-amplitude="aWavyAmplitude"
             :a-wavy-wavelength="aWavyWavelength"
             :a-wavy-spacing="aWavySpacing"
@@ -541,6 +554,7 @@ function resetDefaults() {
             :b-radial-segments="bRadialSegments"
             :b-radial-center-x="bRadialCenterX"
             :b-radial-center-y="bRadialCenterY"
+            :b-radial-inner-radius="bRadialInnerRadius"
             :b-wavy-amplitude="bWavyAmplitude"
             :b-wavy-wavelength="bWavyWavelength"
             :b-wavy-spacing="bWavySpacing"

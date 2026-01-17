@@ -45,6 +45,7 @@ const props = defineProps({
   radialSegments: { type: Number, default: 24 },
   radialCenterOffsetX: { type: Number, default: 0 },
   radialCenterOffsetY: { type: Number, default: 0 },
+  radialInnerRadius: { type: Number, default: 0 },
   // base reference radius for scaling pattern sizes
   baseRefRadius: { type: Number, default: 150 },
   // ARIA label for accessibility
@@ -134,6 +135,7 @@ const radialWedges = computed(() => {
   const cx = radialCenterX.value
   const cy = radialCenterY.value
   const far = props.size * 2.5
+  const inner = Math.max(0, Math.min(clampedR.value - 0.5, (Number(props.radialInnerRadius) || 0) * scale.value))
   const start = -Math.PI / 2
   const step = (2 * Math.PI) / n
   const wedges = []
@@ -141,13 +143,17 @@ const radialWedges = computed(() => {
     if (i % 2 !== 0) continue
     const a0 = start + i * step
     const a1 = start + (i + 1) * step
+    const ix0 = cx + inner * Math.cos(a0)
+    const iy0 = cy + inner * Math.sin(a0)
+    const ix1 = cx + inner * Math.cos(a1)
+    const iy1 = cy + inner * Math.sin(a1)
     const x0 = cx + far * Math.cos(a0)
     const y0 = cy + far * Math.sin(a0)
     const x1 = cx + far * Math.cos(a1)
     const y1 = cy + far * Math.sin(a1)
     wedges.push({
       key: i,
-      d: `M ${cx} ${cy} L ${x0} ${y0} L ${x1} ${y1} Z`
+      d: `M ${ix0} ${iy0} L ${x0} ${y0} L ${x1} ${y1} L ${ix1} ${iy1} Z`
     })
   }
   return wedges

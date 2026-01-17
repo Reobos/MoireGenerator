@@ -26,6 +26,7 @@ const props = defineProps({
   aRadialSegments: { type: Number, default: 24 },
   aRadialCenterX: { type: Number, default: 0 },
   aRadialCenterY: { type: Number, default: 0 },
+  aRadialInnerRadius: { type: Number, default: 0 },
   aWavyAmplitude: { type: Number, default: 6 },
   aWavyWavelength: { type: Number, default: 24 },
   aWavySpacing: { type: Number, default: 12 },
@@ -46,6 +47,7 @@ const props = defineProps({
   bRadialSegments: { type: Number, default: 24 },
   bRadialCenterX: { type: Number, default: 0 },
   bRadialCenterY: { type: Number, default: 0 },
+  bRadialInnerRadius: { type: Number, default: 0 },
   bWavyAmplitude: { type: Number, default: 6 },
   bWavyWavelength: { type: Number, default: 24 },
   bWavySpacing: { type: Number, default: 12 },
@@ -100,6 +102,7 @@ const aScaledRadialOffsetX = computed(() => props.aRadialCenterX * scale.value)
 const aScaledRadialOffsetY = computed(() => props.aRadialCenterY * scale.value)
 const aRadialCenterX = computed(() => centerX.value + aScaledRadialOffsetX.value)
 const aRadialCenterY = computed(() => centerY.value + aScaledRadialOffsetY.value)
+const aScaledRadialInner = computed(() => Math.max(0, Math.min(clampedR.value - 0.5, (Number(props.aRadialInnerRadius) || 0) * scale.value)))
 const aOffset = computed(() => Math.hypot(aScaledOffsetX.value, aScaledOffsetY.value))
 const aRings = computed(() => {
   if (aScaledConcSpacing.value <= 0) return 0
@@ -118,6 +121,7 @@ const bScaledRadialOffsetX = computed(() => props.bRadialCenterX * scale.value)
 const bScaledRadialOffsetY = computed(() => props.bRadialCenterY * scale.value)
 const bRadialCenterX = computed(() => centerX.value + bScaledRadialOffsetX.value)
 const bRadialCenterY = computed(() => centerY.value + bScaledRadialOffsetY.value)
+const bScaledRadialInner = computed(() => Math.max(0, Math.min(clampedR.value - 0.5, (Number(props.bRadialInnerRadius) || 0) * scale.value)))
 // Scaled wavy A/B
 const aScaledWavyAmplitude = computed(() => props.aWavyAmplitude * scale.value)
 const aScaledWavyWavelength = computed(() => Math.max(1, props.aWavyWavelength * scale.value))
@@ -152,7 +156,7 @@ function makeWavePath(width, amplitude, samples, baselineY) {
   return d
 }
 
-function makeRadialWedges(cx, cy, segments, size) {
+function makeRadialWedges(cx, cy, segments, innerR, size) {
   const raw = Math.floor(Number(segments) || 0)
   const clamped = Math.max(2, Math.min(720, raw))
   const n = clamped % 2 === 0 ? clamped : clamped + 1
@@ -164,17 +168,21 @@ function makeRadialWedges(cx, cy, segments, size) {
     if (i % 2 !== 0) continue
     const a0 = start + i * step
     const a1 = start + (i + 1) * step
+    const ix0 = cx + innerR * Math.cos(a0)
+    const iy0 = cy + innerR * Math.sin(a0)
+    const ix1 = cx + innerR * Math.cos(a1)
+    const iy1 = cy + innerR * Math.sin(a1)
     const x0 = cx + far * Math.cos(a0)
     const y0 = cy + far * Math.sin(a0)
     const x1 = cx + far * Math.cos(a1)
     const y1 = cy + far * Math.sin(a1)
-    wedges.push({ key: i, d: `M ${cx} ${cy} L ${x0} ${y0} L ${x1} ${y1} Z` })
+    wedges.push({ key: i, d: `M ${ix0} ${iy0} L ${x0} ${y0} L ${x1} ${y1} L ${ix1} ${iy1} Z` })
   }
   return wedges
 }
 
-const aRadialWedges = computed(() => makeRadialWedges(aRadialCenterX.value, aRadialCenterY.value, props.aRadialSegments, props.size))
-const bRadialWedges = computed(() => makeRadialWedges(bRadialCenterX.value, bRadialCenterY.value, props.bRadialSegments, props.size))
+const aRadialWedges = computed(() => makeRadialWedges(aRadialCenterX.value, aRadialCenterY.value, props.aRadialSegments, aScaledRadialInner.value, props.size))
+const bRadialWedges = computed(() => makeRadialWedges(bRadialCenterX.value, bRadialCenterY.value, props.bRadialSegments, bScaledRadialInner.value, props.size))
 const bOffset = computed(() => Math.hypot(bScaledOffsetX.value, bScaledOffsetY.value))
 const bRings = computed(() => {
   if (bScaledConcSpacing.value <= 0) return 0
