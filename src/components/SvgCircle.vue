@@ -40,6 +40,11 @@ const props = defineProps({
   perforatedSeparation: { type: Number, default: 12 },
   perforatedColor: { type: String, default: '#000' },
   perforatedInvert: { type: Boolean, default: false },
+  // radial segments options
+  useRadialSegments: { type: Boolean, default: false },
+  radialSegments: { type: Number, default: 24 },
+  radialCenterOffsetX: { type: Number, default: 0 },
+  radialCenterOffsetY: { type: Number, default: 0 },
   // base reference radius for scaling pattern sizes
   baseRefRadius: { type: Number, default: 150 },
   // ARIA label for accessibility
@@ -50,6 +55,7 @@ const props = defineProps({
 const uid = Math.random().toString(36).slice(2, 8)
 const titleId = `svgCircleTitle-${uid}`
 const frameClipId = `svgCircleFrame-${uid}`
+const circleClipId = `svgCircleCircle-${uid}`
 const hatchPatternId = `circleHatch-${uid}`
 const concentricPatternId = `circleConcentric-${uid}`
 const wavyPatternId = `circleWavy-${uid}`
@@ -112,6 +118,41 @@ const scaledHexA = computed(() => Math.max(1, props.perforatedSeparation * scale
 const colStep = computed(() => Math.sqrt(3) * scaledHexA.value)
 const rowStep = computed(() => 1.5 * scaledHexA.value)
 
+// Scaled radial values
+const scaledRadialOffsetX = computed(() => props.radialCenterOffsetX * scale.value)
+const scaledRadialOffsetY = computed(() => props.radialCenterOffsetY * scale.value)
+const radialCenterX = computed(() => centerX.value + scaledRadialOffsetX.value)
+const radialCenterY = computed(() => centerY.value + scaledRadialOffsetY.value)
+const safeRadialSegments = computed(() => {
+  const n = Math.floor(Number(props.radialSegments) || 0)
+  const clamped = Math.max(2, Math.min(720, n))
+  return clamped % 2 === 0 ? clamped : clamped + 1
+})
+
+const radialWedges = computed(() => {
+  const n = safeRadialSegments.value
+  const cx = radialCenterX.value
+  const cy = radialCenterY.value
+  const far = props.size * 2.5
+  const start = -Math.PI / 2
+  const step = (2 * Math.PI) / n
+  const wedges = []
+  for (let i = 0; i < n; i++) {
+    if (i % 2 !== 0) continue
+    const a0 = start + i * step
+    const a1 = start + (i + 1) * step
+    const x0 = cx + far * Math.cos(a0)
+    const y0 = cy + far * Math.sin(a0)
+    const x1 = cx + far * Math.cos(a1)
+    const y1 = cy + far * Math.sin(a1)
+    wedges.push({
+      key: i,
+      d: `M ${cx} ${cy} L ${x0} ${y0} L ${x1} ${y1} Z`
+    })
+  }
+  return wedges
+})
+
 function makeWavePath(width, amplitude, samples, baselineY) {
   // adaptive sampling: ~2 samples per pixel of wavelength, clamped
   const n = Math.max(32, Math.min(1024, samples || Math.round(width * 2)))
@@ -154,6 +195,9 @@ defineExpose({ getSvgString, svgEl })
     <defs>
       <clipPath :id="frameClipId">
         <rect :width="size" :height="size" />
+      </clipPath>
+      <clipPath :id="circleClipId">
+        <circle :cx="centerX" :cy="centerY" :r="clampedR" />
       </clipPath>
       <pattern
         :id="hatchPatternId"
@@ -247,7 +291,21 @@ defineExpose({ getSvgString, svgEl })
 
     <g :clip-path="`url(#${frameClipId})`">
       <rect :width="size" :height="size" :fill="background" />
+      <template v-if="useRadialSegments">
+        <g :clip-path="`url(#${circleClipId})`">
+          <path v-for="w in radialWedges" :key="w.key" :d="w.d" fill="#000" />
+        </g>
+        <circle
+          :cx="centerX"
+          :cy="centerY"
+          :r="clampedR"
+          :stroke="stroke"
+          stroke-width="1"
+          fill="none"
+        />
+      </template>
       <circle
+        v-else
         :cx="centerX"
         :cy="centerY"
         :r="clampedR"

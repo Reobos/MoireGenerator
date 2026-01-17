@@ -1,3 +1,13 @@
 # Moire
 
-This was created with CoPilot/ChatGPT. See ailogs folder for chat logs.
+Prerequisites
+
+```bash
+nvm use
+pnpm install
+```
+
+```bash
+npm run dev
+npm run build
+```

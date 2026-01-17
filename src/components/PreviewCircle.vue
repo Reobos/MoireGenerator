@@ -23,6 +23,9 @@ const props = defineProps({
   aConcSpacing: { type: Number, default: 12 },
   aConcOffsetX: { type: Number, default: 0 },
   aConcOffsetY: { type: Number, default: 0 },
+  aRadialSegments: { type: Number, default: 24 },
+  aRadialCenterX: { type: Number, default: 0 },
+  aRadialCenterY: { type: Number, default: 0 },
   aWavyAmplitude: { type: Number, default: 6 },
   aWavyWavelength: { type: Number, default: 24 },
   aWavySpacing: { type: Number, default: 12 },
@@ -40,6 +43,9 @@ const props = defineProps({
   bConcSpacing: { type: Number, default: 12 },
   bConcOffsetX: { type: Number, default: 0 },
   bConcOffsetY: { type: Number, default: 0 },
+  bRadialSegments: { type: Number, default: 24 },
+  bRadialCenterX: { type: Number, default: 0 },
+  bRadialCenterY: { type: Number, default: 0 },
   bWavyAmplitude: { type: Number, default: 6 },
   bWavyWavelength: { type: Number, default: 24 },
   bWavySpacing: { type: Number, default: 12 },
@@ -52,6 +58,7 @@ const props = defineProps({
 const uid = Math.random().toString(36).slice(2, 8)
 const titleId = `previewTitle-${uid}`
 const clipId = `previewClip-${uid}`
+const circleClipId = `previewCircleClip-${uid}`
 
 // A pattern ids
 const aHatchId = `aHatch-${uid}`
@@ -89,6 +96,10 @@ const aScaledConcSpacing = computed(() => props.aConcSpacing * scale.value)
 const aScaledConcStroke = computed(() => props.aConcStroke * scale.value)
 const aScaledOffsetX = computed(() => props.aConcOffsetX * scale.value)
 const aScaledOffsetY = computed(() => props.aConcOffsetY * scale.value)
+const aScaledRadialOffsetX = computed(() => props.aRadialCenterX * scale.value)
+const aScaledRadialOffsetY = computed(() => props.aRadialCenterY * scale.value)
+const aRadialCenterX = computed(() => centerX.value + aScaledRadialOffsetX.value)
+const aRadialCenterY = computed(() => centerY.value + aScaledRadialOffsetY.value)
 const aOffset = computed(() => Math.hypot(aScaledOffsetX.value, aScaledOffsetY.value))
 const aRings = computed(() => {
   if (aScaledConcSpacing.value <= 0) return 0
@@ -103,6 +114,10 @@ const bScaledConcSpacing = computed(() => props.bConcSpacing * scale.value)
 const bScaledConcStroke = computed(() => props.bConcStroke * scale.value)
 const bScaledOffsetX = computed(() => props.bConcOffsetX * scale.value)
 const bScaledOffsetY = computed(() => props.bConcOffsetY * scale.value)
+const bScaledRadialOffsetX = computed(() => props.bRadialCenterX * scale.value)
+const bScaledRadialOffsetY = computed(() => props.bRadialCenterY * scale.value)
+const bRadialCenterX = computed(() => centerX.value + bScaledRadialOffsetX.value)
+const bRadialCenterY = computed(() => centerY.value + bScaledRadialOffsetY.value)
 // Scaled wavy A/B
 const aScaledWavyAmplitude = computed(() => props.aWavyAmplitude * scale.value)
 const aScaledWavyWavelength = computed(() => Math.max(1, props.aWavyWavelength * scale.value))
@@ -136,6 +151,30 @@ function makeWavePath(width, amplitude, samples, baselineY) {
   }
   return d
 }
+
+function makeRadialWedges(cx, cy, segments, size) {
+  const raw = Math.floor(Number(segments) || 0)
+  const clamped = Math.max(2, Math.min(720, raw))
+  const n = clamped % 2 === 0 ? clamped : clamped + 1
+  const far = size * 2.5
+  const start = -Math.PI / 2
+  const step = (2 * Math.PI) / n
+  const wedges = []
+  for (let i = 0; i < n; i++) {
+    if (i % 2 !== 0) continue
+    const a0 = start + i * step
+    const a1 = start + (i + 1) * step
+    const x0 = cx + far * Math.cos(a0)
+    const y0 = cy + far * Math.sin(a0)
+    const x1 = cx + far * Math.cos(a1)
+    const y1 = cy + far * Math.sin(a1)
+    wedges.push({ key: i, d: `M ${cx} ${cy} L ${x0} ${y0} L ${x1} ${y1} Z` })
+  }
+  return wedges
+}
+
+const aRadialWedges = computed(() => makeRadialWedges(aRadialCenterX.value, aRadialCenterY.value, props.aRadialSegments, props.size))
+const bRadialWedges = computed(() => makeRadialWedges(bRadialCenterX.value, bRadialCenterY.value, props.bRadialSegments, props.size))
 const bOffset = computed(() => Math.hypot(bScaledOffsetX.value, bScaledOffsetY.value))
 const bRings = computed(() => {
   if (bScaledConcSpacing.value <= 0) return 0
@@ -179,6 +218,7 @@ const bHatchTransform = computed(() => `rotate(${bHatchAngle.value}, ${centerX.v
 const bConcentricTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
 const bWavyTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
 const bPerforatedTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
+const bRadialTransform = computed(() => `rotate(${bAngle.value}, ${centerX.value}, ${centerY.value})`)
 </script>
 
 <template>
@@ -193,6 +233,10 @@ const bPerforatedTransform = computed(() => `rotate(${bAngle.value}, ${centerX.v
     <defs>
       <clipPath :id="clipId">
         <rect :width="size" :height="size" />
+      </clipPath>
+
+      <clipPath :id="circleClipId">
+        <circle :cx="centerX" :cy="centerY" :r="clampedR" />
       </clipPath>
 
       <!-- A hatch pattern (transparent background for overlay) -->
@@ -307,12 +351,18 @@ const bPerforatedTransform = computed(() => `rotate(${bAngle.value}, ${centerX.v
   <circle v-else-if="aPattern === 'concentric'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${aConcentricId})`" />
   <circle v-else-if="aPattern === 'wavy'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${aWavyId})`" />
   <circle v-else-if="aPattern === 'perforated'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${aPerforatedId})`" />
+  <g v-else-if="aPattern === 'radial'" :clip-path="`url(#${circleClipId})`">
+    <path v-for="w in aRadialWedges" :key="w.key" :d="w.d" fill="#000" />
+  </g>
 
       <!-- Layer B fill if active -->
   <circle v-if="bPattern === 'hatch'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${bHatchId})`" />
   <circle v-else-if="bPattern === 'concentric'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${bConcentricId})`" />
   <circle v-else-if="bPattern === 'wavy'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${bWavyId})`" />
   <circle v-else-if="bPattern === 'perforated'" :cx="centerX" :cy="centerY" :r="clampedR" :fill="`url(#${bPerforatedId})`" />
+  <g v-else-if="bPattern === 'radial'" :clip-path="`url(#${circleClipId})`" :transform="bRadialTransform">
+    <path v-for="w in bRadialWedges" :key="w.key" :d="w.d" fill="#000" />
+  </g>
 
       <!-- Outline on top -->
       <circle :cx="centerX" :cy="centerY" :r="clampedR" :stroke="stroke" stroke-width="1" fill="none" />

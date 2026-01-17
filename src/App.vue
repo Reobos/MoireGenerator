@@ -5,7 +5,7 @@ import CombinedControls from './components/CombinedControls.vue'
 import PreviewCircle from './components/PreviewCircle.vue'
 
 // Circle A (left)
-const aPattern = ref('hatch') // 'hatch' | 'concentric' | 'wavy' | 'perforated'
+const aPattern = ref('hatch') // 'hatch' | 'concentric' | 'wavy' | 'perforated' | 'radial'
 const aLineAngle = ref(70)
 const aHatchStroke = ref(6)
 const aHatchSpacing = ref(6)
@@ -13,6 +13,9 @@ const aConcStroke = ref(4)
 const aConcSpacing = ref(9)
 const aConcOffsetX = ref(0)
 const aConcOffsetY = ref(0)
+const aRadialSegments = ref(24)
+const aRadialCenterX = ref(0)
+const aRadialCenterY = ref(0)
 const aWavyAmplitude = ref(6)
 const aWavyWavelength = ref(24)
 const aWavySpacing = ref(12)
@@ -22,7 +25,7 @@ const aPerforatedSeparation = ref(12)
 const aPerforatedInvert = ref(false)
 
 // Circle B (right)
-const bPattern = ref('concentric') // 'hatch' | 'concentric' | 'wavy' | 'perforated'
+const bPattern = ref('concentric') // 'hatch' | 'concentric' | 'wavy' | 'perforated' | 'radial'
 const bLineAngle = ref(0)
 const bHatchStroke = ref(6)
 const bHatchSpacing = ref(6)
@@ -30,6 +33,9 @@ const bConcStroke = ref(4)
 const bConcSpacing = ref(9)
 const bConcOffsetX = ref(25)
 const bConcOffsetY = ref(30)
+const bRadialSegments = ref(24)
+const bRadialCenterX = ref(0)
+const bRadialCenterY = ref(0)
 const bWavyAmplitude = ref(6)
 const bWavyWavelength = ref(24)
 const bWavySpacing = ref(12)
@@ -52,7 +58,16 @@ const exportDpi = ref(300)
 const SETTINGS_KEY = 'moireSettingsV1'
 
 function setNum(refVar, val) { if (typeof val === 'number') refVar.value = val }
-function setPattern(refVar, val) { if (val === 'hatch' || val === 'concentric' || val === 'wavy' || val === 'perforated') refVar.value = val }
+function setEvenSegments(refVar, val) {
+  if (typeof val !== 'number') return
+  const raw = Math.floor(val)
+  if (!Number.isFinite(raw)) return
+  const clamped = Math.max(2, Math.min(720, raw))
+  refVar.value = clamped % 2 === 0 ? clamped : clamped + 1
+}
+function setPattern(refVar, val) {
+  if (val === 'hatch' || val === 'concentric' || val === 'wavy' || val === 'perforated' || val === 'radial') refVar.value = val
+}
 
 function applyCircleSettings(which, src) {
   if (!src) return
@@ -65,6 +80,9 @@ function applyCircleSettings(which, src) {
     setNum(aConcSpacing, src.concSpacing)
     setNum(aConcOffsetX, src.concOffsetX)
     setNum(aConcOffsetY, src.concOffsetY)
+    setEvenSegments(aRadialSegments, src.aRadialSegments)
+    setNum(aRadialCenterX, src.aRadialCenterX)
+    setNum(aRadialCenterY, src.aRadialCenterY)
     setNum(aWavyAmplitude, src.aWavyAmplitude)
     setNum(aWavyWavelength, src.aWavyWavelength)
     setNum(aWavySpacing, src.aWavySpacing)
@@ -81,6 +99,9 @@ function applyCircleSettings(which, src) {
     setNum(bConcSpacing, src.concSpacing)
     setNum(bConcOffsetX, src.concOffsetX)
     setNum(bConcOffsetY, src.concOffsetY)
+    setEvenSegments(bRadialSegments, src.bRadialSegments)
+    setNum(bRadialCenterX, src.bRadialCenterX)
+    setNum(bRadialCenterY, src.bRadialCenterY)
     setNum(bWavyAmplitude, src.bWavyAmplitude)
     setNum(bWavyWavelength, src.bWavyWavelength)
     setNum(bWavySpacing, src.bWavySpacing)
@@ -116,6 +137,9 @@ function saveSettings() {
       concSpacing: aConcSpacing.value,
       concOffsetX: aConcOffsetX.value,
       concOffsetY: aConcOffsetY.value,
+      aRadialSegments: aRadialSegments.value,
+      aRadialCenterX: aRadialCenterX.value,
+      aRadialCenterY: aRadialCenterY.value,
       aWavyAmplitude: aWavyAmplitude.value,
       aWavyWavelength: aWavyWavelength.value,
       aWavySpacing: aWavySpacing.value,
@@ -133,6 +157,9 @@ function saveSettings() {
       concSpacing: bConcSpacing.value,
       concOffsetX: bConcOffsetX.value,
       concOffsetY: bConcOffsetY.value,
+      bRadialSegments: bRadialSegments.value,
+      bRadialCenterX: bRadialCenterX.value,
+      bRadialCenterY: bRadialCenterY.value,
       bWavyAmplitude: bWavyAmplitude.value,
       bWavyWavelength: bWavyWavelength.value,
       bWavySpacing: bWavySpacing.value,
@@ -311,12 +338,29 @@ onBeforeUnmount(() => {
   window.removeEventListener('resize', updateSize)
 })
 
+// Keep radial segments even
+watch(aRadialSegments, (v) => {
+  const raw = Math.floor(Number(v) || 0)
+  const clamped = Math.max(2, Math.min(720, raw))
+  const even = clamped % 2 === 0 ? clamped : clamped + 1
+  if (even !== v) aRadialSegments.value = even
+})
+
+watch(bRadialSegments, (v) => {
+  const raw = Math.floor(Number(v) || 0)
+  const clamped = Math.max(2, Math.min(720, raw))
+  const even = clamped % 2 === 0 ? clamped : clamped + 1
+  if (even !== v) bRadialSegments.value = even
+})
+
 // Save whenever any relevant control changes
 watch([
   aPattern, aLineAngle, aHatchStroke, aHatchSpacing, aConcStroke, aConcSpacing, aConcOffsetX, aConcOffsetY,
+  aRadialSegments, aRadialCenterX, aRadialCenterY,
   aWavyAmplitude, aWavyWavelength, aWavySpacing, aWavyStroke,
   aPerforatedDotRadius, aPerforatedSeparation, aPerforatedInvert,
   bPattern, bLineAngle, bHatchStroke, bHatchSpacing, bConcStroke, bConcSpacing, bConcOffsetX, bConcOffsetY,
+  bRadialSegments, bRadialCenterX, bRadialCenterY,
   bWavyAmplitude, bWavyWavelength, bWavySpacing, bWavyStroke, bPerforatedDotRadius, bPerforatedSeparation, bPerforatedInvert,
   baseRefRadius, exportDpi,
 ], saveSettings, { deep: false })
@@ -331,6 +375,9 @@ function resetDefaults() {
   aConcSpacing.value = 9
   aConcOffsetX.value = 0
   aConcOffsetY.value = 0
+  aRadialSegments.value = 24
+  aRadialCenterX.value = 0
+  aRadialCenterY.value = 0
   aWavyAmplitude.value = 6
   aWavyWavelength.value = 24
   aWavySpacing.value = 12
@@ -348,6 +395,9 @@ function resetDefaults() {
   bConcSpacing.value = 9
   bConcOffsetX.value = 25
   bConcOffsetY.value = 30
+  bRadialSegments.value = 24
+  bRadialCenterX.value = 0
+  bRadialCenterY.value = 0
   bWavyAmplitude.value = 6
   bWavyWavelength.value = 24
   bWavySpacing.value = 12
@@ -400,6 +450,9 @@ function resetDefaults() {
       :a-conc-spacing="aConcSpacing" @update:aConcSpacing="v => (aConcSpacing = v)"
       :a-conc-offset-x="aConcOffsetX" @update:aConcOffsetX="v => (aConcOffsetX = v)"
       :a-conc-offset-y="aConcOffsetY" @update:aConcOffsetY="v => (aConcOffsetY = v)"
+      :a-radial-segments="aRadialSegments" @update:aRadialSegments="v => (aRadialSegments = v)"
+      :a-radial-center-x="aRadialCenterX" @update:aRadialCenterX="v => (aRadialCenterX = v)"
+      :a-radial-center-y="aRadialCenterY" @update:aRadialCenterY="v => (aRadialCenterY = v)"
       :a-wavy-amplitude="aWavyAmplitude" @update:aWavyAmplitude="v => (aWavyAmplitude = v)"
       :a-wavy-wavelength="aWavyWavelength" @update:aWavyWavelength="v => (aWavyWavelength = v)"
       :a-wavy-spacing="aWavySpacing" @update:aWavySpacing="v => (aWavySpacing = v)"
@@ -416,6 +469,9 @@ function resetDefaults() {
       :b-conc-spacing="bConcSpacing" @update:bConcSpacing="v => (bConcSpacing = v)"
       :b-conc-offset-x="bConcOffsetX" @update:bConcOffsetX="v => (bConcOffsetX = v)"
       :b-conc-offset-y="bConcOffsetY" @update:bConcOffsetY="v => (bConcOffsetY = v)"
+      :b-radial-segments="bRadialSegments" @update:bRadialSegments="v => (bRadialSegments = v)"
+      :b-radial-center-x="bRadialCenterX" @update:bRadialCenterX="v => (bRadialCenterX = v)"
+      :b-radial-center-y="bRadialCenterY" @update:bRadialCenterY="v => (bRadialCenterY = v)"
       :b-wavy-amplitude="bWavyAmplitude" @update:bWavyAmplitude="v => (bWavyAmplitude = v)"
       :b-wavy-wavelength="bWavyWavelength" @update:bWavyWavelength="v => (bWavyWavelength = v)"
       :b-wavy-spacing="bWavySpacing" @update:bWavySpacing="v => (bWavySpacing = v)"
@@ -428,19 +484,21 @@ function resetDefaults() {
       <div class="card stage">
         <div class="row">
           <SvgCircle ref="aRef" :size="size" :r="size/2 - 0.5 - 2"
-            :use-hatch="aPattern === 'hatch'" :use-concentric="aPattern === 'concentric'" :use-wavy="aPattern === 'wavy'" :use-perforated="aPattern === 'perforated'"
+            :use-hatch="aPattern === 'hatch'" :use-concentric="aPattern === 'concentric'" :use-wavy="aPattern === 'wavy'" :use-perforated="aPattern === 'perforated'" :use-radial-segments="aPattern === 'radial'"
             :line-angle="aLineAngle" :line-stroke-width="aHatchStroke" :line-spacing="aHatchSpacing"
             :concentric-stroke-width="aConcStroke" :concentric-spacing="aConcSpacing"
             :concentric-offset-x="aConcOffsetX" :concentric-offset-y="aConcOffsetY" :base-ref-radius="baseRefRadius"
+            :radial-segments="aRadialSegments" :radial-center-offset-x="aRadialCenterX" :radial-center-offset-y="aRadialCenterY"
             :wavy-amplitude="aWavyAmplitude" :wavy-wavelength="aWavyWavelength" :wavy-spacing="aWavySpacing" :wavy-stroke-width="aWavyStroke"
             :perforated-dot-radius="aPerforatedDotRadius" :perforated-separation="aPerforatedSeparation"
             :perforated-invert="aPerforatedInvert"
             aria-label="Circle A" />
           <SvgCircle ref="bRef" :size="size" :r="size/2 - 0.5 - 2"
-            :use-hatch="bPattern === 'hatch'" :use-concentric="bPattern === 'concentric'" :use-wavy="bPattern === 'wavy'" :use-perforated="bPattern === 'perforated'"
+            :use-hatch="bPattern === 'hatch'" :use-concentric="bPattern === 'concentric'" :use-wavy="bPattern === 'wavy'" :use-perforated="bPattern === 'perforated'" :use-radial-segments="bPattern === 'radial'"
             :line-angle="bLineAngle" :line-stroke-width="bHatchStroke" :line-spacing="bHatchSpacing"
             :concentric-stroke-width="bConcStroke" :concentric-spacing="bConcSpacing"
             :concentric-offset-x="bConcOffsetX" :concentric-offset-y="bConcOffsetY" :base-ref-radius="baseRefRadius"
+            :radial-segments="bRadialSegments" :radial-center-offset-x="bRadialCenterX" :radial-center-offset-y="bRadialCenterY"
             :wavy-amplitude="bWavyAmplitude" :wavy-wavelength="bWavyWavelength" :wavy-spacing="bWavySpacing" :wavy-stroke-width="bWavyStroke"
             :perforated-dot-radius="bPerforatedDotRadius" :perforated-separation="bPerforatedSeparation"
             :perforated-invert="bPerforatedInvert"
@@ -461,6 +519,9 @@ function resetDefaults() {
             :a-conc-spacing="aConcSpacing"
             :a-conc-offset-x="aConcOffsetX"
             :a-conc-offset-y="aConcOffsetY"
+            :a-radial-segments="aRadialSegments"
+            :a-radial-center-x="aRadialCenterX"
+            :a-radial-center-y="aRadialCenterY"
             :a-wavy-amplitude="aWavyAmplitude"
             :a-wavy-wavelength="aWavyWavelength"
             :a-wavy-spacing="aWavySpacing"
@@ -477,6 +538,9 @@ function resetDefaults() {
             :b-conc-spacing="bConcSpacing"
             :b-conc-offset-x="bConcOffsetX"
             :b-conc-offset-y="bConcOffsetY"
+            :b-radial-segments="bRadialSegments"
+            :b-radial-center-x="bRadialCenterX"
+            :b-radial-center-y="bRadialCenterY"
             :b-wavy-amplitude="bWavyAmplitude"
             :b-wavy-wavelength="bWavyWavelength"
             :b-wavy-spacing="bWavySpacing"

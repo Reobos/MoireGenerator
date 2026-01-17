@@ -1,7 +1,7 @@
 <script setup>
 const props = defineProps({
   // Circle A
-  aPattern: { type: String, default: 'hatch' }, // 'hatch' | 'concentric'
+  aPattern: { type: String, default: 'hatch' }, // 'hatch' | 'concentric' | 'wavy' | 'perforated' | 'radial'
   aLineAngle: { type: Number, default: 70 },
   aHatchStroke: { type: Number, default: 6 },
   aHatchSpacing: { type: Number, default: 6 },
@@ -9,6 +9,9 @@ const props = defineProps({
   aConcSpacing: { type: Number, default: 9 },
   aConcOffsetX: { type: Number, default: 25 },
   aConcOffsetY: { type: Number, default: 25 },
+  aRadialSegments: { type: Number, default: 24 },
+  aRadialCenterX: { type: Number, default: 0 },
+  aRadialCenterY: { type: Number, default: 0 },
   aWavyAmplitude: { type: Number, default: 6 },
   aWavyWavelength: { type: Number, default: 24 },
   aWavySpacing: { type: Number, default: 12 },
@@ -25,6 +28,9 @@ const props = defineProps({
   bConcSpacing: { type: Number, default: 12 },
   bConcOffsetX: { type: Number, default: 0 },
   bConcOffsetY: { type: Number, default: 0 },
+  bRadialSegments: { type: Number, default: 24 },
+  bRadialCenterX: { type: Number, default: 0 },
+  bRadialCenterY: { type: Number, default: 0 },
   bWavyAmplitude: { type: Number, default: 6 },
   bWavyWavelength: { type: Number, default: 24 },
   bWavySpacing: { type: Number, default: 12 },
@@ -37,11 +43,13 @@ const props = defineProps({
 const emit = defineEmits([
   'update:aPattern','update:aLineAngle','update:aHatchStroke','update:aHatchSpacing',
   'update:aConcStroke','update:aConcSpacing','update:aConcOffsetX','update:aConcOffsetY',
+  'update:aRadialSegments','update:aRadialCenterX','update:aRadialCenterY',
   'update:aWavyAmplitude','update:aWavyWavelength','update:aWavySpacing','update:aWavyStroke',
   'update:aPerforatedDotRadius','update:aPerforatedSeparation',
   'update:aPerforatedInvert',
   'update:bPattern','update:bLineAngle','update:bHatchStroke','update:bHatchSpacing',
   'update:bConcStroke','update:bConcSpacing','update:bConcOffsetX','update:bConcOffsetY',
+  'update:bRadialSegments','update:bRadialCenterX','update:bRadialCenterY',
   'update:bWavyAmplitude','update:bWavyWavelength','update:bWavySpacing','update:bWavyStroke',
   'update:bPerforatedDotRadius','update:bPerforatedSeparation',
   'update:bPerforatedInvert',
@@ -59,6 +67,9 @@ const ids = {
     cspace: `acsp-${uid}`,
     coffx: `acox-${uid}`,
     coffy: `acoy-${uid}`,
+    rseg: `arse-${uid}`,
+    rcx: `arcx-${uid}`,
+    rcy: `arcy-${uid}`,
     wamp: `awamp-${uid}`,
     wwave: `awwav-${uid}`,
     wspace: `awsp-${uid}`,
@@ -73,6 +84,9 @@ const ids = {
     cspace: `bcsp-${uid}`,
     coffx: `bcox-${uid}`,
     coffy: `bcoy-${uid}`,
+    rseg: `brse-${uid}`,
+    rcx: `brcx-${uid}`,
+    rcy: `brcy-${uid}`,
     wamp: `bwamp-${uid}`,
     wwave: `bwwav-${uid}`,
     wspace: `bwsp-${uid}`,
@@ -92,6 +106,7 @@ const ids = {
           <option value="concentric">Concentric</option>
           <option value="wavy">Wavy</option>
           <option value="perforated">Perforated</option>
+          <option value="radial">Radial Segments</option>
         </select>
       </div>
 
@@ -135,6 +150,23 @@ const ids = {
           <input :id="ids.a.coffy" type="range" min="-200" max="200" step="1" :value="aConcOffsetY" @input="e => emit('update:aConcOffsetY', +(e.target.value))" />
           <input class="num" type="number" min="-1000" max="1000" step="1" :value="aConcOffsetY" @input="e => emit('update:aConcOffsetY', +(e.target.value))" />
         </div>
+        </template>
+        <template v-else-if="aPattern === 'radial'">
+          <div class="row">
+            <label :for="ids.a.rseg">Segments</label>
+            <input :id="ids.a.rseg" type="range" min="2" max="240" step="2" :value="aRadialSegments" @input="e => emit('update:aRadialSegments', +(e.target.value))" />
+            <input class="num" type="number" min="2" max="720" step="2" :value="aRadialSegments" @input="e => emit('update:aRadialSegments', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.a.rcx">Center X</label>
+            <input :id="ids.a.rcx" type="range" min="-200" max="200" step="1" :value="aRadialCenterX" @input="e => emit('update:aRadialCenterX', +(e.target.value))" />
+            <input class="num" type="number" min="-1000" max="1000" step="1" :value="aRadialCenterX" @input="e => emit('update:aRadialCenterX', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.a.rcy">Center Y</label>
+            <input :id="ids.a.rcy" type="range" min="-200" max="200" step="1" :value="aRadialCenterY" @input="e => emit('update:aRadialCenterY', +(e.target.value))" />
+            <input class="num" type="number" min="-1000" max="1000" step="1" :value="aRadialCenterY" @input="e => emit('update:aRadialCenterY', +(e.target.value))" />
+          </div>
         </template>
         <template v-else-if="aPattern === 'wavy'">
           <div class="row">
@@ -186,6 +218,7 @@ const ids = {
           <option value="concentric">Concentric</option>
           <option value="wavy">Wavy</option>
           <option value="perforated">Perforated</option>
+          <option value="radial">Radial Segments</option>
         </select>
       </div>
 
@@ -229,6 +262,23 @@ const ids = {
           <input :id="ids.b.coffy" type="range" min="-200" max="200" step="1" :value="bConcOffsetY" @input="e => emit('update:bConcOffsetY', +(e.target.value))" />
           <input class="num" type="number" min="-1000" max="1000" step="1" :value="bConcOffsetY" @input="e => emit('update:bConcOffsetY', +(e.target.value))" />
         </div>
+        </template>
+        <template v-else-if="bPattern === 'radial'">
+          <div class="row">
+            <label :for="ids.b.rseg">Segments</label>
+            <input :id="ids.b.rseg" type="range" min="2" max="240" step="2" :value="bRadialSegments" @input="e => emit('update:bRadialSegments', +(e.target.value))" />
+            <input class="num" type="number" min="2" max="720" step="2" :value="bRadialSegments" @input="e => emit('update:bRadialSegments', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.b.rcx">Center X</label>
+            <input :id="ids.b.rcx" type="range" min="-200" max="200" step="1" :value="bRadialCenterX" @input="e => emit('update:bRadialCenterX', +(e.target.value))" />
+            <input class="num" type="number" min="-1000" max="1000" step="1" :value="bRadialCenterX" @input="e => emit('update:bRadialCenterX', +(e.target.value))" />
+          </div>
+          <div class="row">
+            <label :for="ids.b.rcy">Center Y</label>
+            <input :id="ids.b.rcy" type="range" min="-200" max="200" step="1" :value="bRadialCenterY" @input="e => emit('update:bRadialCenterY', +(e.target.value))" />
+            <input class="num" type="number" min="-1000" max="1000" step="1" :value="bRadialCenterY" @input="e => emit('update:bRadialCenterY', +(e.target.value))" />
+          </div>
         </template>
         <template v-else-if="bPattern === 'wavy'">
           <div class="row">
